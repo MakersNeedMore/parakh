@@ -11,9 +11,9 @@ export const metadata = {
     { name: 'Charvi Goyal' },
     { name: 'Agrima Tripathi' },
     { name: 'Anurag Verma' },
-    { name: 'Nishu' },
+    { name: 'Nishu Kumari' },
     { name: 'Shivang Saxena' },
-    { name: 'Tanu' },
+    { name: 'Tanu Thakur' },
     { name: 'Yash Gupta' }
   ],
   creator: 'MnM Developers',
@@ -137,9 +137,9 @@ const jsonLd = {
         { '@type': 'Person', 'name': 'Charvi Goyal', 'jobTitle': 'Data Science & Database' },
         { '@type': 'Person', 'name': 'Agrima Tripathi', 'jobTitle': 'Technical Writer' },
         { '@type': 'Person', 'name': 'Anurag Verma', 'jobTitle': 'Frontend Developer' },
-        { '@type': 'Person', 'name': 'Nishu', 'jobTitle': 'Frontend Developer' },
+        { '@type': 'Person', 'name': 'Nishu Kumari', 'jobTitle': 'Frontend Developer' },
         { '@type': 'Person', 'name': 'Shivang Saxena', 'jobTitle': 'Backend & Auth' },
-        { '@type': 'Person', 'name': 'Tanu', 'jobTitle': 'Backend, Database & Auth' },
+        { '@type': 'Person', 'name': 'Tanu Thakur', 'jobTitle': 'Backend, Database & Auth' },
         { '@type': 'Person', 'name': 'Yash Gupta', 'jobTitle': 'Frontend Developer' }
       ]
     },
@@ -176,7 +176,7 @@ const jsonLd = {
           'name': 'Who are the creators of Parakh?',
           'acceptedAnswer': {
             '@type': 'Answer',
-            'text': 'Parakh is created by MnM Developers: Aditya Verma, Charvi Goyal, Agrima Tripathi, Anurag Verma, Nishu, Shivang Saxena, Tanu, and Yash Gupta.'
+            'text': 'Parakh is created by MnM Developers: Aditya Verma, Charvi Goyal, Agrima Tripathi, Anurag Verma, Nishu Kumari, Shivang Saxena, Tanu Thakur, and Yash Gupta.'
           }
         }
       ]

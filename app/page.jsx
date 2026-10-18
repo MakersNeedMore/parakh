@@ -21,9 +21,9 @@ export default function Home() {
   const teamMembers = [
     { name: 'Agrima Tripathi', role: 'Technical Writer', img: '/assets/team/agrima-tripathi.jpg' },
     { name: 'Anurag Verma', role: 'Frontend Developer', img: '/assets/team/anurag-verma.jpg' },
-    { name: 'Nishu', role: 'Frontend Developer', img: '/assets/team/nishu.jpg' },
+    { name: 'Nishu Kumari', role: 'Frontend Developer', img: '/assets/team/nishu.jpg' },
     { name: 'Shivang Saxena', role: 'Backend & Auth', img: '/assets/team/shivang-saxena.png' },
-    { name: 'Tanu', role: 'Backend, Database & Auth', img: '/assets/team/tanu.jpg' },
+    { name: 'Tanu Thakur', role: 'Backend, Database & Auth', img: '/assets/team/tanu.jpg' },
     { name: 'Yash Gupta', role: 'Frontend Developer', img: '/assets/team/yash-gupta.jpg' },
     { name: 'Charvi Goyal', role: 'Data Science & Database', img: '/assets/team/charvi-goyal.jpg' },
     { name: 'Aditya Verma', role: 'AI/ML & Backend', img: '/assets/team/aditya-verma.jpg' }
@@ -156,7 +156,7 @@ export default function Home() {
           <dt>What are the official domains for the project?</dt>
           <dd>The project domains are parakh.xyz and pixpect.xyz.</dd>
           <dt>Who is developing the Parakh platform?</dt>
-          <dd>Parakh is engineered by MnM Developers: Aditya Verma (AI/ML &amp; Backend), Charvi Goyal (Data Science &amp; Database), Agrima Tripathi (Technical Writer), Anurag Verma (Frontend Developer), Nishu (Frontend Developer), Shivang Saxena (Backend &amp; Auth), Tanu (Backend, Database &amp; Auth), and Yash Gupta (Frontend Developer).</dd>
+          <dd>Parakh is engineered by MnM Developers: Aditya Verma (AI/ML &amp; Backend), Charvi Goyal (Data Science &amp; Database), Agrima Tripathi (Technical Writer), Anurag Verma (Frontend Developer), Nishu Kumari (Frontend Developer), Shivang Saxena (Backend &amp; Auth), Tanu Thakur (Backend, Database &amp; Auth), and Yash Gupta (Frontend Developer).</dd>
         </dl>
       </section>
       <div className={`toast-msg ${showToast ? 'show' : ''}`}>{toastText}</div>
