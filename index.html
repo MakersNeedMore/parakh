@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parakh • Deepfake Face Detection System</title>
+  <meta name="description"
+    content="Coming Soon • Binary classification platform detecting synthetic, morphed, and manipulated visual media across images and video frames.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+</head>
+
+<body>
+  <div class="app-container">
+    <header class="top-nav">
+      <div class="pulse-badge">
+        <svg class="pulse-svg" width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <circle class="pulse-wave" cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"></circle>
+          <circle class="pulse-dot" cx="12" cy="12" r="4.5" fill="currentColor"></circle>
+        </svg>
+        <span>Coming Soon</span>
+      </div>
+      <div class="domains-wrapper">
+        <span class="domain-label">Reserved Domains</span>
+        <span class="domain-item" onclick="copyDomain('parakh.xyz')" title="Click to copy domain">
+          parakh.xyz
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </span>
+        <span class="domain-bullet">•</span>
+        <span class="domain-item" onclick="copyDomain('pixpect.xyz')" title="Click to copy domain">
+          pixpect.xyz
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </span>
+      </div>
+    </header>
+    <main class="main-viewport">
+      <section class="project-column">
+        <div class="logo-card">
+          <img src="public/assets/long logo darkkkk.png" alt="Pixpect Platform Logo" class="brand-hero-logo">
+        </div>
+        <div class="overview-card">
+          <div class="overview-top-bar">
+            <span class="system-tag">Project Overview</span>
+            <span class="benchmark-badge">Dataset: FaceForensics++</span>
+          </div>
+          <h1 class="project-headline">Deepfake Face Detection System</h1>
+          <p class="project-desc">
+            A specialized platform engineered to detect deep fake pictures, morphed images, and synthetic or
+            AI-manipulated video frames. The system applies a binary classification model to distinguish between
+            authentic and manipulated facial media. For video streams, it sequentially inspects frames, aggregates
+            confidence scores, and highlights segments that appear suspicious.
+          </p>
+          <div class="specs-grid">
+            <div class="spec-item">
+              <div class="spec-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                  <path
+                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                  </path>
+                </svg>
+                <span>Binary Classification</span>
+              </div>
+              <p class="spec-text">Distinguishes authentic from manipulated faces with confidence scoring.</p>
+            </div>
+            <div class="spec-item">
+              <div class="spec-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                  <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+                  <line x1="7" y1="2" x2="7" y2="22"></line>
+                  <line x1="17" y1="2" x2="17" y2="22"></line>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                </svg>
+                <span>Temporal Frame Aggregation</span>
+              </div>
+              <p class="spec-text">Sequentially parses MP4 frames to isolate high-risk video segments.</p>
+            </div>
+            <div class="spec-item">
+              <div class="spec-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>Attention Heatmaps</span>
+              </div>
+              <p class="spec-text">Visualises spatial facial regions influencing model predictions.</p>
+            </div>
+            <div class="spec-item">
+              <div class="spec-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                  <path
+                    d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83">
+                  </path>
+                </svg>
+                <span>Robustness Evaluation</span>
+              </div>
+              <p class="spec-text">Resilience testing across JPEG compression and Gaussian blur.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="team-column">
+        <div class="team-box">
+          <div class="team-box-header">
+            <div class="mnm-brand-wrap">
+              <img src="public/assets/mnm-logo.png" alt="MnM Developers" class="mnm-logo-img">
+              <div class="mnm-text-group">
+                <span class="team-main-title">Our Developers</span>
+              </div>
+            </div>
+            <span class="team-unit-badge">8 Members</span>
+          </div>
+          <div class="team-members-container">
+            <div class="team-grid">
+              <div class="team-member-card">
+                <div class="member-avatar-wrap">
+                  <img src="public/assets/team/agrima-tripathi.jpg" alt="Agrima Tripathi" class="member-avatar-img">
+                </div>
+                <div class="member-info">
+                  <span class="member-name">Agrima Tripathi</span>
+                  <span class="member-role">Technical Writer</span>
+                </div>
+              </div>
+              <div class="team-member-card">
+                <div class="member-avatar-wrap">
+                  <img src="public/assets/team/anurag-verma.jpg" alt="Anurag Verma" class="member-avatar-img">
+                </div>
+                <div class="member-info">
+                  <span class="member-name">Anurag Verma</span>
+                  <span class="member-role">Frontend Developer</span>
+                </div>
+              </div>
+              <div class="team-member-card">
+                <div class="member-avatar-wrap">
+                  <img src="public/assets/team/nishu.jpg" alt="Nishu" class="member-avatar-img">
+                </div>
+                <div class="member-info">
+                  <span class="member-name">Nishu</span>
+                  <span class="member-role">Frontend Developer</span>
+                </div>
+              </div>
+              <div class="team-member-card">
+                <div class="member-avatar-wrap">
+                  <img src="public/assets/team/shivang-saxena.png" alt="Shivang Saxena" class="member-avatar-img">
+                </div>
+                <div class="member-info">
+                  <span class="member-name">Shivang Saxena</span>
+                  <span class="member-role">Backend & Auth</span>
+                </div>
+              </div>
+              <div class="team-member-card">
+                <div class="member-avatar-wrap">
+                  <img src="public/assets/team/tanu.jpg" alt="Tanu" class="member-avatar-img">
+                </div>
+                <div class="member-info">
+                  <span class="member-name">Tanu</span>
+                  <span class="member-role">Backend, Database & Auth</span>
+                </div>
+              </div>
+              <div class="team-member-card">
+                <div class="member-avatar-wrap">
+                  <img src="public/assets/team/yash-gupta.jpg" alt="Yash Gupta" class="member-avatar-img">
+                </div>
+                <div class="member-info">
+                  <span class="member-name">Yash Gupta</span>
+                  <span class="member-role">Frontend Developer</span>
+                </div>
+              </div>
+              <div class="team-member-card">
+                <div class="member-avatar-wrap">
+                  <img src="public/assets/team/charvi-goyal.jpg" alt="Charvi Goyal" class="member-avatar-img">
+                </div>
+                <div class="member-info">
+                  <span class="member-name">Charvi Goyal</span>
+                  <span class="member-role">Data Science & Database</span>
+                </div>
+              </div>
+              <div class="team-member-card">
+                <div class="member-avatar-wrap">
+                  <img src="public/assets/team/aditya-verma.jpg" alt="Aditya Verma" class="member-avatar-img">
+                </div>
+                <div class="member-info">
+                  <span class="member-name">Aditya Verma</span>
+                  <span class="member-role">AI/ML & Backend</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div class="toast-msg" id="toastNotice"></div>
+  <script src="script.js"></script>
+</body>
+
+</html>
