@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import Navbar from '../components/Navbar';
+import SculptureHero from '../components/ui/liquid-sculpture-hero';
 export default function Home() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -137,26 +137,47 @@ export default function Home() {
   ];
   return (
     <div className="app-container">
-      <Navbar />
       <main className="landing-main">
-        <section className="hero-section" id="about">
-          <div className="hero-left">
-            <h1 className="hero-headline">
-              <span className="headline-line headline-shine">Detecting Synthetic Realities.</span>
-              <span className="headline-line headline-accent headline-shine">Restoring Digital Trust.</span>
-            </h1>
-            <p className="hero-description">
-              Forensic-grade neural verification engineered to expose deepfakes and facial manipulation in real time — safeguarding visual authenticity.
-            </p>
-          </div>
-          <div className="hero-right">
-            <img
-              src="/landing page.png"
-              alt="Parakh Forensic Media Analysis"
-              className="hero-image"
-            />
-          </div>
-        </section>
+        <SculptureHero
+          src="/sculpture-rotated.png"
+          imageBackground="#ffffff"
+          showNav={true}
+          themeToggle={false}
+          brand="Parakh"
+          navLinks={[
+            { label: 'About', href: '#about' },
+            { label: 'Analyse', href: '#services' },
+            { label: 'Capabilities', href: '#capabilities' },
+            { label: 'Team', href: '#mnm' },
+          ]}
+          navCta={{ label: 'Log In', href: '#login' }}
+          eyebrow="Forensic Neural Verification — MnM Developers"
+          headline={"Detecting Synthetic Realities.\nRestoring Digital Trust."}
+          headlineAccent="Restoring Digital Trust."
+          body="Forensic-grade neural verification engineered to expose deepfakes and facial manipulation in real time — safeguarding visual authenticity."
+          primaryCta={{ label: 'Run Analysis', href: '#services' }}
+          secondaryCta={{ label: 'Learn more', href: '#capabilities' }}
+          hint="Move across the image"
+          hintTouch="Touch the image"
+          background="#ffffff"
+          darkBackground="#09090b"
+          textColor="#09090b"
+          accentColor="#09090b"
+          headingFont="'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif"
+          accentFont="'Instrument Serif', 'Times New Roman', serif"
+          bodyFont="'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif"
+          intro={true}
+          streaks={true}
+          liquid={1}
+          turbulence={1}
+          strength={1}
+          showCredit={false}
+          height="100svh"
+          backdropText="pixpect"
+          sculptureScale={1.9}
+          mobileSculptureScale={1.4}
+          id="about"
+        />
         <section className="upload-section" id="services">
           <div className="upload-container">
             <div

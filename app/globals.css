@@ -330,13 +330,29 @@ body {
   gap: 56px;
 }
 
-.hero-section {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 56px;
+.sculpture-hero-section {
+  position: relative;
+  width: 100%;
+  min-height: calc(88vh - 100px);
+  overflow: hidden;
+  display: flex;
   align-items: center;
+}
+.sculpture-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  z-index: 0;
+}
+.sculpture-hero-content {
+  position: relative;
+  z-index: 1;
+  width: 50%;
+  max-width: 620px;
   padding: 72px 16px 64px 16px;
-  min-height: calc(80vh - 100px);
+  pointer-events: none;
 }
 .hero-left {
   display: flex;
@@ -407,23 +423,7 @@ body {
   font-weight: 400;
   max-width: 540px;
 }
-.hero-right {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-}
 
-.hero-image {
-  width: 100%;
-  max-width: 520px;
-  height: auto;
-  object-fit: contain;
-  display: block;
-  user-select: none;
-  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.08));
-  margin-top: -24px;
-}
 .upload-section {
   width: 100%;
   padding: 16px 0 32px 0;
@@ -1274,35 +1274,32 @@ body {
 }
 
 @media (max-width: 1024px) {
-  .hero-section {
-    grid-template-columns: 1fr;
-    gap: 36px;
-    padding: 24px 8px 36px 8px;
-    min-height: auto;
+  .sculpture-hero-content {
+    width: 70%;
+    padding: 48px 16px 48px 16px;
   }
-
   .hero-left {
     max-width: 100%;
     padding-top: 0;
   }
-
-  .hero-image {
-    max-width: 440px;
-    margin-top: 0;
-  }
 }
 
 @media (max-width: 640px) {
+  .sculpture-hero-section {
+    min-height: 60vh;
+  }
+  .sculpture-hero-content {
+    width: 100%;
+    padding: 36px 16px 36px 16px;
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
   .hero-headline {
     font-size: 30px;
   }
-
   .hero-description {
     font-size: 15.5px;
-  }
-
-  .hero-image {
-    max-width: 320px;
   }
 
   .team-grid {
