@@ -174,8 +174,8 @@ export default function Home() {
           showCredit={false}
           height="100svh"
           backdropText="pixpect"
-          sculptureScale={1.9}
-          mobileSculptureScale={1.4}
+          sculptureScale={0.65}
+          mobileSculptureScale={0.75}
           id="about"
         />
         <section className="upload-section" id="services">

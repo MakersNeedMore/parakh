@@ -55,11 +55,12 @@ body {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 1680px;
-  margin: 0 auto;
-  padding: 12px 24px 24px 24px;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .floating-nav-wrapper {

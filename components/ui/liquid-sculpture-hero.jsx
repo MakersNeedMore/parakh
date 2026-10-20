@@ -858,32 +858,30 @@ class LiquidEngine {
     gl.getExtension('WEBGL_lose_context')?.loseContext()
   }
 }
+const STAGE_ANGLE = 26.6
+const STAGE_ANGLE_RAD = STAGE_ANGLE * Math.PI / 180
+const STAGE_COS = Math.cos(STAGE_ANGLE_RAD)
+const STAGE_SIN = Math.sin(STAGE_ANGLE_RAD)
+const STAGE_SCALE = 1.25
+function inverseRotatePoint(x, y, cx, cy) {
+  const dx = x - cx
+  const dy = y - cy
+  const rx = dx * STAGE_COS + dy * STAGE_SIN
+  const ry = -dx * STAGE_SIN + dy * STAGE_COS
+  return [cx + rx / STAGE_SCALE, cy + ry / STAGE_SCALE]
+}
 function computeRect(w, h, aspect, band, p) {
-  const bandH = Math.max(80, band.bottom - band.top)
-  let rw, maxH
-  if (w >= 1024) {
-    rw = w * 1.02 * p.scale
-    maxH = bandH * 1.1 * p.scale
-  } else if (w >= 640) {
-    rw = w * 1.3 * p.scale
-    maxH = bandH * 1.15 * p.scale
-  } else if (aspect < 1.3) {
-    rw = w * 1.0 * p.mobileScale
-    maxH = bandH * 1.0 * p.mobileScale
-  } else {
-    rw = w * 1.9 * p.mobileScale
-    maxH = bandH * 1.2 * p.mobileScale
-  }
-  if (rw / aspect > maxH) rw = maxH * aspect
+  const scale = w >= 640 ? p.scale : p.mobileScale
+  const rw = w * scale
   const rh = rw / aspect
-  const cx = w * (0.5 + p.x / 100)
-  const cy = (band.top + band.bottom) / 2 + h * (p.y / 100)
+  const cx = w / 2
+  const cy = h / 2
   return { x: cx - rw / 2, y: cy - rh / 2, w: rw, h: rh }
 }
 const CSS = `
 .sh-root{position:relative;width:100%;height:var(--sh-h);overflow:hidden;isolation:isolate;container-type:size;transition:background-color .6s ease,color .6s ease;background:var(--sh-bg);color:var(--sh-fg);font-family:var(--sh-body);-webkit-font-smoothing:antialiased;touch-action:pan-y;display:flex;flex-direction:column;box-sizing:border-box}
 .sh-root *,.sh-root *::before,.sh-root *::after{box-sizing:border-box}
-.sh-stage{position:absolute;inset:0;z-index:0;pointer-events:none}
+.sh-stage{position:absolute;inset:0;z-index:0;pointer-events:none;transform:rotate(26.6deg) scale(1.25);transform-origin:center center}
 .sh-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity .5s ease}
 .sh-fallback{position:absolute;display:block;max-width:none;user-select:none;-webkit-user-drag:none;transition:opacity .5s ease}
 .sh-root[data-gl="on"] .sh-canvas{opacity:1}
@@ -1192,7 +1190,9 @@ export default function SculptureHero(props) {
     mq.addEventListener?.('change', onMq)
     const pos = (e) => {
       const b = root.getBoundingClientRect()
-      return [e.clientX - b.left, e.clientY - b.top]
+      const rawX = e.clientX - b.left
+      const rawY = e.clientY - b.top
+      return inverseRotatePoint(rawX, rawY, b.width / 2, b.height / 2)
     }
     let touched = false
     const markTouched = () => {
