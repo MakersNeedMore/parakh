@@ -174,6 +174,7 @@ export default function Home() {
           showCredit={false}
           height="100svh"
           backdropText="pixpect"
+          backdropScale={1.1}
           sculptureScale={0.65}
           mobileSculptureScale={0.75}
           id="about"

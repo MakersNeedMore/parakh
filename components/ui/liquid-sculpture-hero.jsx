@@ -890,7 +890,8 @@ const CSS = `
 .sh-root[data-swap="1"] .sh-fallback{opacity:0;transition-duration:.25s}
 .sh-backdrop{position:absolute;left:50%;z-index:0;transform:translate(-50%,-50%);width:100%;text-align:center;white-space:nowrap;pointer-events:none;user-select:none;font-family:var(--sh-head);font-weight:900;letter-spacing:-.03em;line-height:.8;color:color-mix(in srgb,var(--sh-fg) 4%,transparent)}
 .sh-nav{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px clamp(20px,3.2cqw,48px) 0}
-.sh-brand{font-family:var(--sh-head);font-weight:600;font-size:17px;letter-spacing:-.02em;color:inherit;text-decoration:none}
+.sh-brand{display:inline-flex;align-items:center;color:inherit;text-decoration:none}
+.sh-brand-logo{display:block;width:auto;height:32px;max-width:150px;object-fit:contain}
 .sh-links{display:flex;align-items:center;gap:clamp(18px,2.4cqw,36px);list-style:none;margin:0;padding:0}
 .sh-link{color:inherit;text-decoration:none;font-size:13.5px;letter-spacing:-.005em;opacity:.72;transition:opacity .2s}
 .sh-link:hover{opacity:1}
@@ -899,6 +900,23 @@ const CSS = `
 .sh-theme:focus-visible{outline:2px solid var(--sh-fg);outline-offset:4px}
 .sh-navcta{color:inherit;text-decoration:none;font-size:13.5px;padding:8px 14px;border:1px solid color-mix(in srgb,var(--sh-fg) 22%,transparent);border-radius:999px;transition:background .25s,color .25s}
 .sh-navcta:hover{background:var(--sh-fg);color:var(--sh-bg)}
+.sh-mobile-menu{display:none}
+.sh-menu-toggle{display:inline-grid;place-items:center;width:40px;height:40px;padding:0;border:1px solid color-mix(in srgb,var(--sh-fg) 22%,transparent);border-radius:50%;color:inherit;background:transparent;cursor:pointer}
+.sh-menu-toggle svg{width:18px;height:18px}
+.sh-menu-toggle:focus-visible,.sh-drawer-close:focus-visible{outline:2px solid var(--sh-fg);outline-offset:4px}
+.sh-drawer-layer{position:absolute;inset:0;z-index:10;pointer-events:none}
+.sh-drawer-layer[data-open="true"]{pointer-events:auto}
+.sh-drawer-scrim{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:rgba(9,9,11,.3);opacity:0;visibility:hidden;transition:opacity .28s ease,visibility 0s linear .28s}
+.sh-drawer-layer[data-open="true"] .sh-drawer-scrim{opacity:1;visibility:visible;transition:opacity .28s ease}
+.sh-drawer{position:absolute;z-index:2;top:0;right:0;display:flex;flex-direction:column;width:min(88%,380px);height:100%;padding:clamp(24px,6vw,36px);background:var(--sh-bg);color:var(--sh-fg);box-shadow:-18px 0 50px rgba(0,0,0,.12);transform:translateX(101%);visibility:hidden;transition:transform .36s cubic-bezier(.2,.7,.2,1),visibility 0s linear .36s;will-change:transform}
+.sh-drawer-layer[data-open="true"] .sh-drawer{transform:translateX(0);visibility:visible;transition:transform .36s cubic-bezier(.2,.7,.2,1),visibility 0s}
+.sh-drawer-head{display:flex;align-items:center;justify-content:space-between;gap:20px;padding-bottom:24px;border-bottom:1px solid color-mix(in srgb,var(--sh-fg) 12%,transparent)}
+.sh-drawer-title{margin:0;font-size:12px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;opacity:.55}
+.sh-drawer-close{display:inline-grid;place-items:center;width:38px;height:38px;padding:0;border:1px solid color-mix(in srgb,var(--sh-fg) 22%,transparent);border-radius:50%;color:inherit;background:transparent;cursor:pointer}
+.sh-drawer-close svg{width:17px;height:17px}
+.sh-drawer-links{display:flex;flex-direction:column;gap:0;margin:12px 0 0;padding:0;list-style:none}
+.sh-drawer-link{display:block;padding:18px 0;border-bottom:1px solid color-mix(in srgb,var(--sh-fg) 10%,transparent);color:inherit;text-decoration:none;font-size:clamp(20px,5vw,26px);letter-spacing:-.035em;transition:opacity .2s}
+.sh-drawer-link:hover{opacity:.6}
 .sh-hint{position:absolute;z-index:1;transform:translate(-50%,0);display:flex;align-items:center;gap:10px;white-space:nowrap;font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.5;pointer-events:none;transition:opacity .8s ease}
 .sh-hint::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;animation:sh-pulse 2.4s ease-in-out infinite}
 .sh-root[data-touched="1"] .sh-hint{opacity:0}
@@ -922,9 +940,9 @@ const CSS = `
 .sh-credit{position:absolute;z-index:2;right:clamp(20px,3.2cqw,48px);bottom:10px;font-size:10px;letter-spacing:.06em;color:inherit;opacity:.38;text-decoration:none}
 .sh-credit:hover{opacity:.8}
 @container (max-width:1023px){.sh-content{grid-template-columns:1fr;gap:28px}.sh-aside{justify-self:start;max-width:520px;padding-bottom:0}.sh-h1{font-size:clamp(40px,min(9.5cqw,9cqh),96px)}}
-@container (max-width:767px){.sh-links li:not(.sh-keep){display:none}}
-@container (max-width:639px){.sh-nav{padding-top:20px}.sh-h1{font-size:clamp(36px,min(12.5cqw,7.2cqh),60px);line-height:.94}.sh-body{font-size:15px;margin-bottom:20px}.sh-eyebrow{font-size:11px}.sh-ctas{gap:18px}.sh-btn{height:48px}.sh-content{padding-bottom:40px}.sh-credit{right:auto;left:50%;transform:translateX(-50%)}}
-@media (prefers-reduced-motion:reduce){.sh-hint::before{animation:none}.sh-canvas,.sh-fallback,.sh-btn,.sh-btn svg,.sh-txt svg{transition:none}}
+@container (max-width:767px){.sh-links li:not(.sh-keep){display:none}.sh-mobile-menu{display:flex}}
+@container (max-width:639px){.sh-nav{padding-top:20px}.sh-stage{transform:translate(-3%,-25%) rotate(26.6deg) scale(1.25)}.sh-h1{font-size:clamp(34px,min(11.5cqw,6.2cqh),52px);line-height:.92}.sh-eyebrow{display:none}.sh-body{font-size:14px;line-height:1.42;margin-bottom:12px}.sh-ctas{gap:14px}.sh-btn{height:44px}.sh-content{padding-bottom:16px;transform:translateY(-15svh)}.sh-credit{right:auto;left:50%;transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.sh-hint::before{animation:none}.sh-canvas,.sh-fallback,.sh-btn,.sh-btn svg,.sh-txt svg{transition:none}.sh-drawer-scrim,.sh-drawer{transition:none}}
 `
 const SunIcon = () => (
   <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -1054,6 +1072,7 @@ export default function SculptureHero(props) {
     intro = true,
     height = '100svh',
     backdropText = '',
+    backdropScale = 1,
     showCredit = false,
     className,
     style,
@@ -1070,12 +1089,21 @@ export default function SculptureHero(props) {
   const engineRef = React.useRef(null)
   const aspectRef = React.useRef(1)
   const [isTouch, setIsTouch] = React.useState(false)
-  const layout = React.useRef({ scale: sculptureScale, mobileScale: mobileSculptureScale, x: sculptureX, y: sculptureY })
+  const [menuOpen, setMenuOpen] = React.useState(false)
+  const menuButtonRef = React.useRef(null)
+  const menuCloseRef = React.useRef(null)
+  const menuPanelRef = React.useRef(null)
+  const closeMenu = React.useCallback(() => {
+    setMenuOpen(false)
+    menuButtonRef.current?.focus({ preventScroll: true })
+  }, [])
+  const layout = React.useRef({ scale: sculptureScale, mobileScale: mobileSculptureScale, x: sculptureX, y: sculptureY, backdropScale })
   layout.current = {
     scale: clamp(sculptureScale, 0.3, 3),
     mobileScale: clamp(mobileSculptureScale, 0.3, 3),
     x: sculptureX,
     y: sculptureY,
+    backdropScale: clamp(backdropScale, 0.3, 3),
   }
   const [mode, setMode] = React.useState(theme)
   React.useEffect(() => setMode(theme), [theme])
@@ -1095,6 +1123,36 @@ export default function SculptureHero(props) {
     (isMobile && mode === 'light' && (mobileSrc || activeLightSrc)) ||
     (mode === 'dark' && activeDarkSrc) ||
     activeLightSrc
+  React.useEffect(() => {
+    if (!menuOpen) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    menuCloseRef.current?.focus({ preventScroll: true })
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        closeMenu()
+        return
+      }
+      if (event.key !== 'Tab') return
+      const focusable = menuPanelRef.current?.querySelectorAll('a[href],button:not([disabled])')
+      if (!focusable?.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [menuOpen, closeMenu])
   const engineOpts = (rm) => ({
     interactive,
     strength: clamp(strength, 0, 2),
@@ -1139,8 +1197,9 @@ export default function SculptureHero(props) {
     const bd = backdropRef.current
     if (bd) {
       const chars = Math.max(1, (bd.textContent || '').length)
-      bd.style.fontSize = Math.max(28, (w * 0.68) / (chars * 0.58)) + 'px'
-      bd.style.top = (band.top + band.bottom) / 2 + 'px'
+      const bScale = layout.current.backdropScale || 1
+      bd.style.fontSize = Math.max(28, (w * 0.98 * bScale) / (chars * 0.58)) + 'px'
+      bd.style.top = (band.top + band.bottom) / 2 - (mob ? h * 0.12 : 0) + 'px'
     }
     const img = imgRef.current
     if (img) {
@@ -1283,7 +1342,7 @@ export default function SculptureHero(props) {
     const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     e.setOptions(optsRef.current(rm))
   }, [interactive, strength, radius, particleDensity, dotSize, particleSpread, turbulence, liquid, streaks, restStyle, returnSpeed, ambient, ambientIntensity, speed, intro, bgRgb, imgBgRgb])
-  React.useEffect(() => { relayout() }, [sculptureScale, mobileSculptureScale, sculptureX, sculptureY, relayout])
+  React.useEffect(() => { relayout() }, [sculptureScale, mobileSculptureScale, sculptureX, sculptureY, backdropScale, relayout])
   const vars = {
     '--sh-bg': background,
     '--sh-fg': fg,
@@ -1305,26 +1364,90 @@ export default function SculptureHero(props) {
       </div>
       <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>{imageAlt}</span>
       {showNav && (
-        <nav ref={navRef} className="sh-nav" aria-label="Primary">
-          <a className="sh-brand" href="#">{brand}</a>
-          <ul className="sh-links">
-            {navLinks.map((l, i) => (
-              <li key={i}><a className="sh-link" href={l.href}>{l.label}</a></li>
-            ))}
-            {themeToggle && (
-              <li className="sh-keep">
-                <button type="button" className="sh-theme" aria-label={mode === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'} onClick={() => setMode((m) => (m === 'dark' ? 'light' : 'dark'))}>
-                  {mode === 'dark' ? <SunIcon /> : <MoonIcon />}
+        <>
+          <nav ref={navRef} className="sh-nav" aria-label="Primary">
+            <a className="sh-brand" href="#" aria-label={brand}>
+              <img className="sh-brand-logo" src="/assets/brand-logo.png" alt={brand} />
+            </a>
+            <ul className="sh-links">
+              {navLinks.map((l, i) => (
+                <li key={i}><a className="sh-link" href={l.href}>{l.label}</a></li>
+              ))}
+              {themeToggle && (
+                <li className="sh-keep">
+                  <button type="button" className="sh-theme" aria-label={mode === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'} onClick={() => setMode((m) => (m === 'dark' ? 'light' : 'dark'))}>
+                    {mode === 'dark' ? <SunIcon /> : <MoonIcon />}
+                  </button>
+                </li>
+              )}
+              {navCta && navCta.label && (
+                <li className="sh-keep">
+                  <a className="sh-navcta" href={navCta.href}>{navCta.label}</a>
+                </li>
+              )}
+              <li className="sh-keep sh-mobile-menu">
+                <button
+                  ref={menuButtonRef}
+                  type="button"
+                  className="sh-menu-toggle"
+                  aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                  aria-expanded={menuOpen}
+                  aria-controls="sh-navigation-drawer"
+                  onClick={() => setMenuOpen((open) => !open)}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    {menuOpen ? <><path d="m6 6 12 12" /><path d="M18 6 6 18" /></> : <><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /></>}
+                  </svg>
                 </button>
               </li>
-            )}
-            {navCta && navCta.label && (
-              <li className="sh-keep">
-                <a className="sh-navcta" href={navCta.href}>{navCta.label}</a>
-              </li>
-            )}
-          </ul>
-        </nav>
+            </ul>
+          </nav>
+          <div className="sh-drawer-layer" data-open={menuOpen ? 'true' : 'false'}>
+            <button
+              type="button"
+              className="sh-drawer-scrim"
+              aria-label="Close navigation menu"
+              aria-hidden={!menuOpen}
+              tabIndex={menuOpen ? 0 : -1}
+              onClick={closeMenu}
+            />
+            <aside
+              ref={menuPanelRef}
+              id="sh-navigation-drawer"
+              className="sh-drawer"
+              role="dialog"
+              aria-modal={menuOpen || undefined}
+              aria-hidden={!menuOpen}
+              aria-label="Website navigation"
+              inert={!menuOpen}
+            >
+              <div className="sh-drawer-head">
+                <p className="sh-drawer-title">Navigation</p>
+                <button
+                  ref={menuCloseRef}
+                  type="button"
+                  className="sh-drawer-close"
+                  aria-label="Close navigation menu"
+                  onClick={closeMenu}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <path d="m6 6 12 12" />
+                    <path d="M18 6 6 18" />
+                  </svg>
+                </button>
+              </div>
+              <ul className="sh-drawer-links">
+                {navLinks.map((link, index) => (
+                  <li key={`${link.href}-${index}`}>
+                    <a className="sh-drawer-link" href={link.href} onClick={() => setMenuOpen(false)}>
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+          </div>
+        </>
       )}
       {interactive && hintText ? (
         <div ref={hintRef} className="sh-hint" aria-hidden="true">{hintText}</div>
