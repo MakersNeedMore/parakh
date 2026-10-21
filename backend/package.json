@@ -1,0 +1,9 @@
+{
+  "name": "parakh-inference",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Parakh forensic inference backend (FastAPI + ONNX Runtime)",
+  "scripts": {
+    "download-model": "python scripts/download_model.py"
+  }
+}

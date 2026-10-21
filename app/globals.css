@@ -838,6 +838,15 @@ body {
   background: rgba(239, 68, 68, 0.08);
   border: 1px solid rgba(239, 68, 68, 0.25);
 }
+.verdict-neutral {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .scorecard-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

@@ -1,5 +1,28 @@
 # Parakh (परख) • Deepfake Face Detection System
 
+## 🖥️ Running locally (frontend + inference backend)
+
+The pixel detector (Step-2) lives in `backend/` (FastAPI + self-hosted ONNX,
+~40 MB one-time download — never committed). The Next.js frontend just POSTs
+the image to it, so analysis can never get "stuck" loading weights in the browser.
+
+```powershell
+# Terminal 1 — backend (one-time setup, then every session):
+cd d:\Parakh\backend
+pip install -r requirements.txt
+python scripts/download_model.py
+uvicorn app:app --port 8000
+# check: http://127.0.0.1:8000/v1/health  -> {"modelReady": true, ...}
+
+# Terminal 2 — frontend:
+cd d:\Parakh
+npm install
+npm run dev   # http://localhost:3000
+```
+
+Point the frontend at a deployed backend with `NEXT_PUBLIC_PARAKH_BACKEND`
+(see `.env.example`). Free options: HuggingFace Spaces (Docker) or Render free tier.
+
 ![Parakh Banner](public/assets/long%20logo%20dark.png)
 
 A high-performance deepfake face detection and synthetic media verification system engineered to distinguish between authentic and manipulated visual media across single images and video streams. Developed under the **Pixpect** brand by **MnM Developers**.

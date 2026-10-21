@@ -17,3 +17,11 @@ Thumbs.db
 *.pem
 .vscode/
 .idea/
+# Parakh inference backend: weights are downloaded, never committed.
+backend/models/*.onnx
+backend/models/*.json
+backend/__pycache__/
+backend/*/__pycache__/
+*.pyc
+.venv/
+venv/

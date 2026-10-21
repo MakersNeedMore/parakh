@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import SculptureHero from '../components/ui/liquid-sculpture-hero';
+import { runStep1Provenance } from '../lib/forensics/runStep1';
 export default function Home() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -9,12 +10,15 @@ export default function Home() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showScorecard, setShowScorecard] = useState(false);
+  const [report, setReport] = useState(null);
+  const [analysisError, setAnalysisError] = useState(null);
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
       setShowScorecard(false);
+      setReport(null);
       setProgress(0);
     }
   };
@@ -34,6 +38,7 @@ export default function Home() {
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
       setShowScorecard(false);
+      setReport(null);
       setProgress(0);
     }
   };
@@ -45,62 +50,36 @@ export default function Home() {
     }
     setPreviewUrl(null);
     setShowScorecard(false);
+    setReport(null);
     setProgress(0);
   };
-  const handleRunAnalysis = () => {
+  const handleRunAnalysis = async () => {
+    let file = selectedFile;
     if (!previewUrl) {
       setPreviewUrl('/landing page.png');
-      setSelectedFile({ name: 'sample_forensic_frame_01.png', size: 1411186 });
+      file = null;
     }
+    if (file && typeof file.arrayBuffer !== 'function') file = null;
     setShowScorecard(false);
-    setProgress(0);
+    setReport(null);
+    setAnalysisError(null);
+    setProgress(2);
     setIsAnalyzing(true);
-    let current = 0;
-    const interval = setInterval(() => {
-      current += Math.floor(Math.random() * 8) + 6;
-      if (current >= 100) {
-        current = 100;
-        setProgress(100);
-        clearInterval(interval);
-        setTimeout(() => {
-          setIsAnalyzing(false);
-          setShowScorecard(true);
-        }, 320);
-      } else {
-        setProgress(current);
+    try {
+      if (!file) {
+        const res = await fetch('/landing page.png');
+        const blob = await res.blob();
+        file = new File([blob], 'sample_forensic_frame_01.png', { type: blob.type || 'image/png' });
       }
-    }, 100);
-  };
-  const forensicMetrics = [
-    {
-      id: 'neural-synth',
-      name: 'Neural Synthesis Likelihood',
-      value: 88,
-      benchmark: 'FaceForensics++ c23 baseline',
-      description: 'Convolutional & generative diffusion latent residuals'
-    },
-    {
-      id: 'boundary-art',
-      name: 'Facial Boundary Artifacts',
-      value: 74,
-      benchmark: 'Alpha matte edge variance',
-      description: 'Splicing margin feathering & interpolation discrepancies'
-    },
-    {
-      id: 'spectral-freq',
-      name: 'Spectral Frequency Discontinuity',
-      value: 46,
-      benchmark: '2D Azimuth FFT residual',
-      description: 'High-frequency cross-spectral power spectrum anomalies'
-    },
-    {
-      id: 'biometric-mesh',
-      name: 'Biometric Geometry Drift',
-      value: 14,
-      benchmark: '68-point 3D vertex mesh',
-      description: 'Facial landmark triangulation & ocular symmetry alignment'
+      const r = await runStep1Provenance(file, (p) => setProgress(p));
+      setReport(r);
+      setProgress(100);
+      setTimeout(() => { setIsAnalyzing(false); setShowScorecard(true); }, 320);
+    } catch (err) {
+      setIsAnalyzing(false);
+      setAnalysisError('Analysis failed: ' + String(err?.message || err));
     }
-  ];
+  };
   const getMetricStyle = (val) => {
     if (val < 30) {
       return {
@@ -315,78 +294,59 @@ export default function Home() {
                 )}
               </button>
             </div>
-            {showScorecard && (
+            {analysisError && (
+              <div className="scorecard-container" role="alert">
+                <p className="scorecard-subtitle">{analysisError}</p>
+              </div>
+            )}
+            {showScorecard && report && (
               <div className="scorecard-container" id="forensic-scorecard">
                 <div className="scorecard-header">
                   <div className="scorecard-header-left">
-                    <span className="scorecard-badge">Forensic Verification Report</span>
-                    <h2 className="scorecard-title">Neural Media Diagnostic Scorecard</h2>
-                    <p className="scorecard-subtitle">Media benchmarked across multi-layer convolutional &amp; frequency classification models</p>
+                    <span className="scorecard-badge">Forensic Verification Report · Steps 1–2 Provenance + AI-Generated Detection</span>
+                    <h2 className="scorecard-title">{report.overall.label}</h2>
+                    <p className="scorecard-subtitle">{report.overall.note}</p>
                   </div>
                   <div className="scorecard-verdict-box">
-                    <span className="verdict-label">Aggregate Verdict</span>
-                    <span className="verdict-val verdict-danger">Synthetic Artifacts Detected</span>
+                    <span className="verdict-label">File</span>
+                    <span className="verdict-val verdict-neutral">{report.file.name}</span>
                   </div>
                 </div>
                 <div className="scorecard-grid">
-                  {forensicMetrics.map((metric) => {
-                    const theme = getMetricStyle(metric.value);
+                  {report.engines.map((eng) => {
+                    const val = eng.score == null ? 0 : eng.score;
+                    const theme = getMetricStyle(eng.status === 'informational' ? 50 : val);
                     const circumference = 238.76;
-                    const strokeOffset = circumference - (circumference * metric.value) / 100;
+                    const strokeOffset = circumference - (circumference * val) / 100;
                     return (
-                      <div key={metric.id} className="scorecard-card">
+                      <div key={eng.id} className="scorecard-card">
                         <div className="gauge-wrap">
                           <svg className="gauge-svg" width="96" height="96" viewBox="0 0 96 96">
-                            <circle
-                              className="gauge-track"
-                              cx="48"
-                              cy="48"
-                              r="38"
-                              fill="none"
-                              strokeWidth="7"
-                            />
-                            <circle
-                              className="gauge-progress-bar"
-                              cx="48"
-                              cy="48"
-                              r="38"
-                              fill="none"
-                              strokeWidth="7"
-                              stroke={theme.color}
-                              strokeDasharray={circumference}
-                              strokeDashoffset={strokeOffset}
-                              strokeLinecap="round"
-                              transform="rotate(-90 48 48)"
-                            />
-                            <text
-                              x="48"
-                              y="53"
-                              textAnchor="middle"
-                              className="gauge-val-text"
-                            >
-                              {metric.value}%
+                            <circle className="gauge-track" cx="48" cy="48" r="38" fill="none" strokeWidth="7" />
+                            <circle className="gauge-progress-bar" cx="48" cy="48" r="38" fill="none" strokeWidth="7" stroke={theme.color} strokeDasharray={circumference} strokeDashoffset={strokeOffset} strokeLinecap="round" transform="rotate(-90 48 48)" />
+                            <text x="48" y="53" textAnchor="middle" className="gauge-val-text">
+                              {eng.score == null ? '—' : `${eng.score}%`}
                             </text>
                           </svg>
                         </div>
                         <div className="metric-details">
-                          <span className="metric-name">{metric.name}</span>
-                          <span
-                            className="metric-status-pill"
-                            style={{
-                              color: theme.color,
-                              backgroundColor: theme.bg,
-                              borderColor: theme.border
-                            }}
-                          >
-                            {theme.status}
+                          <span className="metric-name">{eng.name}</span>
+                          <span className="metric-status-pill" style={{ color: theme.color, backgroundColor: theme.bg, borderColor: theme.border }}>
+                            {eng.status}
                           </span>
-                          <span className="metric-desc">{metric.description}</span>
-                          <span className="metric-benchmark">{metric.benchmark}</span>
+                          {eng.details.slice(0, 4).map((d, i) => (
+                            <span key={i} className="metric-desc">{d}</span>
+                          ))}
+                          <span className="metric-benchmark">{eng.version} · {eng.runtimeMs} ms</span>
                         </div>
                       </div>
                     );
                   })}
                 </div>
+                <p className="scorecard-subtitle" style={{ marginTop: 16 }}>
+                  Runs on-device (edge) · {report.timing.totalMs} ms · No single averaged fake probability — each engine stands alone.
+                   
+                </p>
               </div>
             )}
           </div>
