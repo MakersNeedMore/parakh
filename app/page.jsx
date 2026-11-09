@@ -104,16 +104,6 @@ export default function Home() {
       status: 'Synthetic (High Risk)'
     };
   };
-  const teamMembers = [
-    { name: 'Agrima Tripathi', role: 'Technical Writer', img: '/assets/team/agrima-tripathi.jpg' },
-    { name: 'Anurag Verma', role: 'Frontend Developer', img: '/assets/team/anurag-verma.jpg' },
-    { name: 'Nishu Kumari', role: 'Frontend Developer', img: '/assets/team/nishu.jpg' },
-    { name: 'Shivang Saxena', role: 'Backend & Auth', img: '/assets/team/shivang-saxena.png' },
-    { name: 'Tanu Thakur', role: 'Backend, Database & Auth', img: '/assets/team/tanu.jpg' },
-    { name: 'Yash Gupta', role: 'Frontend Developer', img: '/assets/team/yash-gupta.jpg' },
-    { name: 'Charvi Goyal', role: 'Data Science & Database', img: '/assets/team/charvi-goyal.jpg' },
-    { name: 'Aditya Verma', role: 'AI/ML & Backend', img: '/assets/team/aditya-verma.jpg' }
-  ];
   return (
     <div className="app-container">
       <main className="landing-main">
@@ -124,12 +114,11 @@ export default function Home() {
           themeToggle={false}
           brand="Parakh"
           navLinks={[
-            { label: 'About', href: '#about' },
+            { label: 'About', href: '/about' },
             { label: 'Analyse', href: '#services' },
             { label: 'Capabilities', href: '#capabilities' },
-            { label: 'Team', href: '#mnm' },
           ]}
-          navCta={{ label: 'Log In', href: '#login' }}
+          navCta={{ label: 'Log In', href: '/login' }}
           eyebrow="Forensic Neural Verification — MnM Developers"
           headline={"Detecting Synthetic Realities.\nRestoring Digital Trust."}
           headlineAccent="Restoring Digital Trust."
@@ -405,7 +394,7 @@ export default function Home() {
                 </div>
                 <div className="card-footer-action">
                   <span className="action-hint">Log in to unlock these extended features and run high-depth scans.</span>
-                  <Link href="#login" className="btn-explore-login">
+                  <Link href="/login" className="btn-explore-login">
                     <span>Log In to Try Features</span>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M5 12h14" />
@@ -484,34 +473,6 @@ export default function Home() {
                     <span>No Media Uploads</span>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </section>
-        <section className="team-section" id="mnm">
-          <div className="team-box">
-            <div className="team-box-header">
-              <div className="mnm-brand-wrap">
-                <img src="/assets/mnm-logo.png" alt="MnM Developers Logo" className="mnm-logo-img" />
-                <div className="mnm-text-group">
-                  <span className="team-main-title">MnM Developers</span>
-                </div>
-              </div>
-              <span className="team-unit-badge">8 Members</span>
-            </div>
-            <div className="team-members-container">
-              <div className="team-grid">
-                {teamMembers.map((member) => (
-                  <div key={member.name} className="team-member-card">
-                    <div className="member-avatar-wrap">
-                      <img src={member.img} alt={member.name} className="member-avatar-img" />
-                    </div>
-                    <div className="member-info">
-                      <span className="member-name">{member.name}</span>
-                      <span className="member-role">{member.role}</span>
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
           </div>

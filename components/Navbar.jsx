@@ -39,18 +39,15 @@ export default function Navbar() {
           </Link>
         </div>
         <div className="navbar-center-desktop">
-          <Link href="#services" className="nav-link" onClick={closeMobileMenu}>
+          <Link href="/#services" className="nav-link" onClick={closeMobileMenu}>
             Services
           </Link>
-          <Link href="#about" className="nav-link" onClick={closeMobileMenu}>
+          <Link href="/about" className="nav-link" onClick={closeMobileMenu}>
             About
-          </Link>
-          <Link href="#mnm" className="nav-link" onClick={closeMobileMenu}>
-            MnM
           </Link>
         </div>
         <div className="navbar-right-desktop">
-          <Link href="#login" className="nav-btn-login" onClick={closeMobileMenu}>
+          <Link href="/login" className="nav-btn-login" onClick={closeMobileMenu}>
             Login
           </Link>
         </div>
@@ -78,17 +75,14 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="navbar-mobile-menu" role="dialog" aria-modal="true" aria-label="Mobile Navigation">
           <div className="navbar-mobile-links">
-            <Link href="#services" className="mobile-nav-link" onClick={closeMobileMenu}>
+            <Link href="/#services" className="mobile-nav-link" onClick={closeMobileMenu}>
               Services
             </Link>
-            <Link href="#about" className="mobile-nav-link" onClick={closeMobileMenu}>
+            <Link href="/about" className="mobile-nav-link" onClick={closeMobileMenu}>
               About
             </Link>
-            <Link href="#mnm" className="mobile-nav-link" onClick={closeMobileMenu}>
-              MnM
-            </Link>
             <div className="mobile-nav-divider"></div>
-            <Link href="#login" className="mobile-nav-btn-login" onClick={closeMobileMenu}>
+            <Link href="/login" className="mobile-nav-btn-login" onClick={closeMobileMenu}>
               Login
             </Link>
           </div>
