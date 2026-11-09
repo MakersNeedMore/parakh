@@ -79,8 +79,6 @@ Parakh is developed and maintained by the **MnM Developers** group:
 | **Aditya Verma** | AI/ML & Backend |
 | **Charvi Goyal** | Data Science & Database |
 | **Agrima Tripathi** | Technical Writer |
-| **Anurag Verma** | Frontend Developer |
-| **Nishu Kumari** | Frontend Developer |
 | **Shivang Saxena** | Backend & Auth |
 | **Tanu Thakur** | Backend, Database & Auth |
 | **Yash Gupta** | Frontend Developer |
