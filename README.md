@@ -1,6 +1,10 @@
 <div align="center">
 
-  <img src="public/assets/parakh-banner.png" alt="Parakh Banner" width="600"/>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/assets/parakh-banner-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="public/assets/parakh-banner-light.png">
+    <img alt="Parakh Banner" src="public/assets/parakh-banner-light.png" width="550">
+  </picture>
 
   # Parakh (परख)
   ### Deepfake Face Detection & Synthetic Media Forensic System
