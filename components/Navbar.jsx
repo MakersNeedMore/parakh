@@ -1,9 +1,17 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { isLoggedIn, clearSession } from '../lib/auth';
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+  useEffect(() => {
+    const sync = () => setLoggedIn(isLoggedIn());
+    sync();
+    window.addEventListener('parakh-auth-change', sync);
+    return () => window.removeEventListener('parakh-auth-change', sync);
+  }, []);
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -39,20 +47,23 @@ export default function Navbar() {
           </Link>
         </div>
         <div className="navbar-center-desktop">
-          <Link href="#services" className="nav-link" onClick={closeMobileMenu}>
-            Services
+          <Link href="/analyze" className="nav-link" onClick={closeMobileMenu}>
+            Analyse
           </Link>
-          <Link href="#about" className="nav-link" onClick={closeMobileMenu}>
+          <Link href="/about" className="nav-link" onClick={closeMobileMenu}>
             About
-          </Link>
-          <Link href="#mnm" className="nav-link" onClick={closeMobileMenu}>
-            MnM
           </Link>
         </div>
         <div className="navbar-right-desktop">
-          <Link href="#login" className="nav-btn-login" onClick={closeMobileMenu}>
-            Login
-          </Link>
+          {loggedIn ? (
+            <button type="button" className="nav-btn-login" onClick={() => { clearSession(); closeMobileMenu(); }}>
+              Log out
+            </button>
+          ) : (
+            <Link href="/login" className="nav-btn-login" onClick={closeMobileMenu}>
+              Login
+            </Link>
+          )}
         </div>
         <button
           type="button"
@@ -78,19 +89,22 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="navbar-mobile-menu" role="dialog" aria-modal="true" aria-label="Mobile Navigation">
           <div className="navbar-mobile-links">
-            <Link href="#services" className="mobile-nav-link" onClick={closeMobileMenu}>
-              Services
+            <Link href="/analyze" className="mobile-nav-link" onClick={closeMobileMenu}>
+              Analyse
             </Link>
-            <Link href="#about" className="mobile-nav-link" onClick={closeMobileMenu}>
+            <Link href="/about" className="mobile-nav-link" onClick={closeMobileMenu}>
               About
             </Link>
-            <Link href="#mnm" className="mobile-nav-link" onClick={closeMobileMenu}>
-              MnM
-            </Link>
             <div className="mobile-nav-divider"></div>
-            <Link href="#login" className="mobile-nav-btn-login" onClick={closeMobileMenu}>
-              Login
-            </Link>
+            {loggedIn ? (
+              <button type="button" className="mobile-nav-btn-login" onClick={() => { clearSession(); closeMobileMenu(); }}>
+                Log out
+              </button>
+            ) : (
+              <Link href="/login" className="mobile-nav-btn-login" onClick={closeMobileMenu}>
+                Login
+              </Link>
+            )}
           </div>
         </div>
       )}
