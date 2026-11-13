@@ -30,6 +30,10 @@ const contributions = [
     work: 'Technical writer: documentation and project write-ups.',
     name: 'Agrima Tripathi',
   },
+  {
+    work: 'Project testing, quality assurance, and system verification.',
+    name: 'Tanu Thakur',
+  },
 ];
 
 const team = [
