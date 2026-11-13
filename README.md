@@ -1,10 +1,6 @@
 <div align="center">
 
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="public/assets/logo-dark-theme.png">
-    <source media="(prefers-color-scheme: light)" srcset="public/assets/logo-light-theme.png">
-    <img alt="Parakh Banner" src="public/assets/logo.png" width="550">
-  </picture>
+  <img src="public/assets/parakh-banner.png" alt="Parakh Banner" width="600"/>
 
   # Parakh (परख)
   ### Deepfake Face Detection & Synthetic Media Forensic System
@@ -182,11 +178,11 @@ The Parakh backend provides a modular RESTful API architecture structured for in
 ### Engineering Contributions
 
 - **Yash Gupta**: Built the landing page, about page and login page, and handled model testing.
-- **Shivang Saxena**: Researched open-source models , built the backend and integrated the AI/ML in it.
+- **Shivang Saxena**: Researched open-source models, developed the backend, and integrated AI/ML capabilities.
 - **Charvi Goyal**: Working on the data analytics part and handling the database.
 - **Aditya Verma**: AI/ML model training.
+- **Tanu Thakur**: Testing the project and backend quality assurance.
 - **Agrima Tripathi**: Technical writer: documentation and project write-ups.
-- **Tanu Thakur**: Project testing, quality assurance, and system verification.
 
 ### MnM Developers
 

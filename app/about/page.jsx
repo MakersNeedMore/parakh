@@ -14,8 +14,12 @@ const contributions = [
   },
   {
     work:
-      'Researched open-source models , built the backend and integrated the AI/ML in it.',
+      'Researched open-source models, developed the backend, and integrated AI/ML capabilities.',
     name: 'Shivang Saxena',
+  },
+  {
+    work: 'Testing the project and backend quality assurance.',
+    name: 'Tanu Thakur',
   },
   {
     work:
@@ -29,10 +33,6 @@ const contributions = [
    {
     work: 'Technical writer: documentation and project write-ups.',
     name: 'Agrima Tripathi',
-  },
-  {
-    work: 'Project testing, quality assurance, and system verification.',
-    name: 'Tanu Thakur',
   },
 ];
 
