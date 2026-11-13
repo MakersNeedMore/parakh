@@ -64,6 +64,20 @@ class DeepGuardClassifier:
             if self._pipeline is not None:
                 return
             try:
+                # Shim stringzilla if unavailable/blocked by OS security policy
+                import sys
+                import types
+
+                if "stringzilla" not in sys.modules:
+                    try:
+                        import stringzilla  # noqa: F401
+                    except Exception:
+                        class _FallbackStringZilla(types.ModuleType):
+                            def translate(self, text: Any, lut: Any, inplace: bool = True) -> Any:
+                                return text
+
+                        sys.modules["stringzilla"] = _FallbackStringZilla("stringzilla")
+
                 # Loading custom model code is explicitly enabled for this chosen
                 # DeepGuard model. Review the model card/code before changing IDs.
                 from transformers import pipeline

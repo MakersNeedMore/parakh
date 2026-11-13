@@ -162,8 +162,14 @@ def v1_health():
 
 
 @app.post("/v1/detect/ai-generated", tags=["detection"])
-async def detect_ai_generated(image: UploadFile = File(...)):
-    path, original = await _save_upload(image, _IMAGE_EXTENSIONS, settings.max_image_mb * 1024 * 1024)
+async def detect_ai_generated(
+    image: UploadFile | None = File(None),
+    file: UploadFile | None = File(None),
+):
+    upload = image or file
+    if upload is None:
+        raise HTTPException(status_code=400, detail="Missing image or file upload in request body")
+    path, original = await _save_upload(upload, _IMAGE_EXTENSIONS, settings.max_image_mb * 1024 * 1024)
     try:
         t0 = datetime.now(timezone.utc)
         result = await run_in_threadpool(analyze_image_path, path)

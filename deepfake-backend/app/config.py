@@ -42,6 +42,24 @@ class Settings(BaseSettings):
             raise ValueError("COOKIE_SAMESITE must be lax, strict, or none")
         return value
 
+    @field_validator("upload_dir", mode="after")
+    @classmethod
+    def resolve_upload_dir(cls, value: Path) -> Path:
+        if not value.is_absolute():
+            backend_root = Path(__file__).resolve().parent.parent
+            return (backend_root / value).resolve()
+        return value
+
+    @field_validator("database_url", mode="after")
+    @classmethod
+    def resolve_sqlite_db(cls, value: str) -> str:
+        if value.startswith("sqlite:///./"):
+            rel_file = value.replace("sqlite:///./", "")
+            backend_root = Path(__file__).resolve().parent.parent
+            abs_path = (backend_root / rel_file).resolve().as_posix()
+            return f"sqlite:///{abs_path}"
+        return value
+
     @field_validator("fake_threshold")
     @classmethod
     def validate_threshold(cls, value: float) -> float:
