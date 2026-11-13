@@ -12,18 +12,18 @@
   [![License](https://img.shields.io/badge/License-Proprietary-blue?style=for-the-badge)](LICENSE)
 
   <p align="center">
-    <strong>A production-ready forensic verification engine distinguishing authentic media from AI-manipulated and synthetic deepfakes across still images and video streams.</strong>
+    <strong>Telling real images from fake ones. A production-ready forensic verification engine distinguishing authentic media from AI-manipulated and synthetic deepfakes across still images and video streams.</strong>
   </p>
 
   <p align="center">
     <a href="#-project-overview">Overview</a> •
+    <a href="#-the-problem">The Problem</a> •
+    <a href="#-what-we-are-solving">Our Solution</a> •
+    <a href="#-how-it-works">How It Works</a> •
     <a href="#-core-features">Features</a> •
     <a href="#-system-architecture">Architecture</a> •
-    <a href="#-tech-stack">Tech Stack</a> •
-    <a href="#-getting-started">Getting Started</a> •
-    <a href="#-api-documentation">API Docs</a> •
     <a href="#-benchmarks">Benchmarks</a> •
-    <a href="#-engineering-team">Team</a>
+    <a href="#-contributions--team">Team</a>
   </p>
 
 </div>
@@ -32,35 +32,77 @@
 
 ## 📌 Project Overview
 
-Digital media manipulation and modern generative models have made high-fidelity facial forgery trivial to produce, posing severe threats to digital trust, information integrity, and identity security.
+Digital media manipulation and modern generative artificial intelligence tools have made creating hyper-realistic synthetic faces accessible to anyone, presenting severe threats to visual authenticity, personal reputation, and digital verification. 
 
-**Parakh (परख)** is a specialized, multi-stage digital forensics platform engineered to detect manipulated facial media with high confidence. Operating under the **Pixpect** brand by **MnM Developers**, Parakh combines cryptographic provenance verification (C2PA Content Credentials) with neural deepfake classifiers benchmarked against standard datasets (including **FaceForensics++**).
+**Parakh (परख)** is an advanced artificial intelligence platform developed under the **Pixpect** brand by **MnM Developers**. Engineered to detect manipulated facial media, forged pictures, and synthetic video streams, Parakh combines cryptographic provenance verification (C2PA Content Credentials) with neural deep learning models trained and benchmarked against standard datasets (including **FaceForensics++**).
 
-### Official Domains
+### Official Project Domains
 - `parakh.xyz`
 - `pixpect.xyz`
 
 ---
 
-## 🚀 Core Features
+## ⚠️ The Problem
 
-- **Multi-Stage Forensic Pipeline**:
-  - **Step 1 — Cryptographic Provenance**: Verifies C2PA signature manifests, digital watermarks, and EXIF camera metadata to trace the origin of the asset.
-  - **Step 2 — Neural Deepfake Classification**: Employs deep convolutional and vision transformer models (DeepGuard MS-EffGCViT) to detect blending seams, pixel warping, and facial boundary artifacts.
-- **Still Image Forensic Analysis**:
-  - High-precision probability scoring with instant verdict (`likely_authentic` vs `likely_manipulated`).
-  - Spatial localization ensuring detection focuses on cropped facial bounding boxes.
-- **Temporal Video Stream Analysis**:
-  - Sequential frame extraction and temporal verification.
-  - Frame-by-frame confidence timelines flagging suspicious segments and blinking/inter-frame warping anomalies.
-- **Enterprise Authentication & Session Management**:
-  - User registration, login, and profile tracking.
-  - Hardened Argon2id password hashing and short-lived JWT access tokens.
-- **Hardened Upload Security**:
-  - Binary magic byte validation (`\xFF\xD8\xFF` JPEG, `\x89PNG` PNG, `RIFF...WEBP` WebP, `ftyp`/`moov` MP4).
-  - Directory containment checks preventing path traversal exploits.
-- **Robustness Against Real-World Degradations**:
-  - Resilient against lossy JPEG re-compression, motion blur, and video downsampling.
+Deepfake technology is accelerating at an unprecedented pace. High-quality autoencoders, diffusion models, and facial reenactment algorithms can generate synthetic faces that are virtually indistinguishable from authentic media to the human eye.
+
+- **Spread of Misinformation**: Manipulated images and synthetic media are used to forge news events, distort political discourse, and undermine public confidence.
+- **Identity Theft & Impersonation**: Malicious actors create forged portraits and impersonate individuals for fraud, blackmail, and credential theft.
+- **Erosion of Digital Trust**: When visual proof can no longer be trusted intuitively, media organizations, legal institutions, and everyday users need robust, automated computational tools to verify authenticity.
+
+---
+
+## 🛡️ What We Are Solving
+
+**Parakh** provides automated, evidence-grounded neural verification to restore trust in digital media:
+
+- **Automated AI/ML Analysis**: Users can upload any suspicious still image or video clip; the models inspect low-level pixel distributions, blending seams, and facial structure to deliver an instant verdict with an exact confidence score.
+- **Multi-Modal Inspection**: Rather than relying on a single heuristic, Parakh checks both cryptographic provenance (whether the asset contains signed C2PA credentials or altered EXIF metadata) and deep learning pixel-level classification.
+- **Comprehensive Diagnostic Reports**: The system generates actionable forensic reports detailing real vs. fake probabilities, suspicious temporal segments, and media integrity indicators.
+
+---
+
+## ⚙️ How It Works
+
+Parakh processes visual media through a structured three-step verification pipeline:
+
+```text
+ 01. Upload Media          02. Forensic Neural Analysis         03. Certified Audit Report
+┌─────────────────┐       ┌─────────────────────────────┐      ┌─────────────────────────┐
+│ • JPEG, PNG     │ ───►  │ • C2PA Provenance & EXIF    │ ───► │ • Clear Authenticity    │
+│ • WebP Images   │       │ • YOLO Face Localization    │      │   Confidence Scores     │
+│ • MP4 Streams   │       │ • DeepGuard MS-EffGCViT     │      │ • Temporal Timeline     │
+└─────────────────┘       │ • Frame-by-Frame Aggregator │      │ • Downloadable Report   │
+                          └─────────────────────────────┘      └─────────────────────────┘
+```
+
+1. **Step 1 — Upload Media**: The user drops in a still photo (JPEG, PNG, WebP) or video stream into the forensic workbench.
+2. **Step 2 — Dual-Phase Neural Analysis**:
+   - *Provenance Engine*: Reads metadata manifests, EXIF tags, and C2PA cryptographic signatures to verify whether the image was captured by genuine hardware or generated/altered by an AI tool.
+   - *Deep Learning Classification*: A YOLOv8 detector localizes and crops the facial region, feeding the normalized facial bounding box into the **DeepGuard MS-EffGCViT** neural network to identify GAN artifacts, warping boundaries, and frequency-domain anomalies.
+3. **Step 3 — Forensic Scorecard & Audit Report**: Parakh presents an intuitive verdict (`likely_authentic` vs `likely_manipulated`), a percentage-based confidence score, layer analysis details, and exportable documentation.
+
+---
+
+## 🚀 Core Features & Forensic Capabilities
+
+### 1. Still Image Binary Classification
+Evaluates individual portraits and facial pictures with high precision. Isolates subtle pixel blending boundaries, unnatural skin smoothing, irregular eye reflections, and digital artifacts that escape human visual inspection.
+
+### 2. Video Temporal Verification
+Analyzes MP4 video streams across uniformly sampled frames. By tracking facial features sequentially across time, Parakh detects temporal flicker, inconsistent blinking patterns, and frame-to-frame warping common in video deepfakes.
+
+### 3. Cryptographic Provenance & C2PA Validation
+Validates Coalition for Content Provenance and Authenticity (C2PA) signature manifests. Detects whether cryptographic hashes match or if claims indicate AI creation tools (e.g., Midjourney, DALL-E, Stable Diffusion).
+
+### 4. Enterprise Authentication & Analysis History
+Features an integrated authentication module powered by Argon2id password hashing and short-lived JWT session tokens, allowing authenticated users to review past forensic scans and manage audit history.
+
+### 5. Multi-Layer Upload Protections
+Enforces strict binary magic-byte inspection (`\xFF\xD8\xFF` JPEG, `\x89PNG` PNG, `RIFF...WEBP` WebP, `ftyp`/`moov` MP4) and directory containment sanitization to prevent spoofed payloads and path traversal attempts.
+
+### 6. Robustness Under Degradation
+Maintains reliable classification accuracy even when media has undergone lossy JPEG re-compression, social media transcoding, or motion blur.
 
 ---
 
@@ -92,155 +134,56 @@ Digital media manipulation and modern generative models have made high-fidelity 
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Technology Stack
 
 | Domain | Technologies |
 | :--- | :--- |
-| **Frontend** | [Next.js 15](https://nextjs.org/) (App Router), [React 19](https://react.dev/), Vanilla CSS Design System, WebGL Canvas |
-| **Backend & APIs** | [FastAPI](https://fastapi.tiangolo.com/), [Pydantic v2](https://docs.pydantic.dev/), [SQLAlchemy](https://www.sqlalchemy.org/), [Uvicorn](https://www.uvicorn.org/) |
-| **AI/ML & Inference** | [PyTorch](https://pytorch.org/), [DeepGuard](https://github.com/KoreaPeter) (MS-EffGCViT), [Ultralytics YOLOv8](https://github.com/ultralytics/ultralytics), OpenCV, Albumentations |
-| **Auth & Cryptography** | [Argon2id](https://pypi.org/project/argon2-cffi/), PyJWT, [C2PA Content Credentials](https://c2pa.org/) |
-| **Testing & Tooling** | `pytest`, `pytest-asyncio`, ESLint, Docker |
-
----
-
-## 📂 Repository Structure
-
-```text
-Parakh-Backend-AI-Auth/
-├── app/                        # Next.js 15 App Router pages & layouts
-│   ├── about/                  # Project mission & MnM Developers team
-│   ├── analyze/                # Interactive forensic analysis workbench
-│   ├── login/                  # Authentication & registration interface
-│   ├── layout.jsx              # Global metadata, SEO & navigation shell
-│   └── page.jsx                # Landing page & feature showcase
-├── deepfake-backend/           # FastAPI backend & DeepGuard AI/ML pipeline
-│   ├── app/
-│   │   ├── auth/               # Argon2id hashing, JWT tokens, user handlers
-│   │   ├── db/                 # SQLAlchemy models & database session
-│   │   ├── ml/                 # DeepGuard classifier, YOLO face detector, pipeline
-│   │   ├── config.py           # Pydantic v2 application settings
-│   │   └── main.py             # FastAPI entry point, routes & CORS policy
-│   ├── tests/                  # Automated pytest suite (auth, media, models)
-│   ├── requirements.txt        # Backend dependencies
-│   ├── requirements-ml.txt     # DeepGuard and PyTorch ML dependencies
-│   └── run_windows.ps1         # Windows backend launch script
-├── lib/                        # Shared frontend utilities & forensic engines
-│   ├── forensics/              # C2PA, EXIF, AI-generation client engines
-│   ├── auth.js                 # Frontend session and token manager
-│   └── parakh-api.js           # API client for backend communication
-├── public/                     # Static assets, branding, and icons
-├── run_backend.ps1             # Root one-click backend launcher (PowerShell)
-├── package.json                # Frontend scripts and dependencies
-└── README.md                   # Project documentation
-```
-
----
-
-## 💻 Getting Started
-
-### Prerequisites
-- **Node.js**: v18.17+ or v20+
-- **Python**: 3.10 or 3.11 (with `pip` and `virtualenv`)
-- **Git**
-
----
-
-### Step-by-Step Setup
-
-#### 1. Clone the Repository
-```bash
-git clone https://github.com/MakersNeedMore/parakh.git
-cd parakh
-```
-
-#### 2. Setup the Frontend
-```bash
-npm install
-```
-
-#### 3. Setup the AI/ML Backend
-
-**On Windows (PowerShell):**
-```powershell
-# Run setup script (creates virtual environment and installs dependencies)
-.\deepfake-backend\setup_windows.ps1
-
-# Start the FastAPI server
-.\run_backend.ps1
-# Or: npm run dev:backend
-```
-
-**On Linux / macOS:**
-```bash
-cd deepfake-backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt -r requirements-ml.txt
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-- **Interactive Swagger Documentation**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- **ReDoc Documentation**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
-- **Health Check**: [http://127.0.0.1:8000/v1/health](http://127.0.0.1:8000/v1/health)
-
-#### 4. Start the Frontend Development Server
-In a new terminal window:
-```bash
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) to view the application.
-
----
-
-## 🧪 Testing & Verification
-
-### Running Backend Tests
-Execute the automated test suite covering authentication, CORS, media upload validation, video chunking, and ML adapter pipelines:
-```bash
-npm run test:backend
-# Or:
-cd deepfake-backend && python -m pytest -v
-```
-
-### Building Frontend Production Bundle
-```bash
-npm run build
-```
-
----
-
-## 📡 Key API Endpoints
-
-| Method | Endpoint | Description | Auth Required |
-| :--- | :--- | :--- | :---: |
-| `GET` | `/v1/health` | Health status and ML model readiness | No |
-| `POST` | `/auth/register` | Register new user account with Argon2id hash | No |
-| `POST` | `/auth/login` | Authenticate user and receive JWT access token | No |
-| `GET` | `/auth/me` | Fetch currently authenticated user profile | **Yes (Bearer)** |
-| `POST` | `/detections/image` | Upload image for binary deepfake classification | **Yes (Bearer)** |
-| `POST` | `/detections/video` | Upload video for sampled temporal analysis | **Yes (Bearer)** |
-| `POST` | `/v1/detect/ai-generated` | Forensic analysis endpoint for Next.js workbench | No |
-| `GET` | `/detections` | Retrieve history of user detections | **Yes (Bearer)** |
+| **Frontend & UI Layer** | [Next.js 15](https://nextjs.org/) (App Router), [React 19](https://react.dev/), Vanilla CSS Design System, WebGL Canvas |
+| **Backend & Services** | [FastAPI](https://fastapi.tiangolo.com/), [Pydantic v2](https://docs.pydantic.dev/), [SQLAlchemy](https://www.sqlalchemy.org/), [Uvicorn](https://www.uvicorn.org/) |
+| **AI/ML & Vision Models** | [PyTorch](https://pytorch.org/), [DeepGuard](https://github.com/KoreaPeter) (MS-EffGCViT), [Ultralytics YOLOv8](https://github.com/ultralytics/ultralytics), OpenCV, Albumentations |
+| **Authentication & Security** | [Argon2id](https://pypi.org/project/argon2-cffi/), PyJWT, [C2PA Content Credentials](https://c2pa.org/) |
+| **Architecture & Storage** | SQLite / PostgreSQL, Docker, RESTful JSON APIs |
 
 ---
 
 ## 🔬 Benchmark Datasets & Forgery Detection
 
-Parakh is benchmarked against the **FaceForensics++ (FF++)** benchmark across four manipulation protocols:
+Parakh is evaluated and benchmarked against the standard **FaceForensics++ (FF++)** dataset across four primary manipulation categories:
 
-| Forgery Technique | Mechanism & Characteristics | Detection Signal |
+| Forgery Technique | Manipulation Mechanism | Forensic Detection Signal |
 | :--- | :--- | :--- |
-| **Deepfakes** | Autoencoder-based latent facial code swaps | Pixel-level blending seam artifacts |
-| **Face2Face** | Real-time source-to-target facial expression transfer | Warping deformations around mouth/eyes |
-| **FaceSwap** | 3D graphics model-based facial replacement | Color mismatches and boundary discontinuities |
-| **NeuralTextures** | Neural radiance & texture rendering manipulation | High-frequency GAN anomalies and flicker |
+| **Deepfakes** | Autoencoder-based latent facial code swaps | Pixel-level blending seam artifacts and boundary warping |
+| **Face2Face** | Real-time facial reenactment and expression transfer | Deformations around the mouth, jawline, and eye regions |
+| **FaceSwap** | Classical computer-graphics 3D face replacement | Color distribution mismatches and boundary discontinuities |
+| **NeuralTextures** | Neural radiance & texture rendering manipulation | High-frequency GAN anomalies and inter-frame facial flicker |
 
 ---
 
-## 👥 Contributors & Engineering Team
+## 📡 API Architecture Overview
 
-Parakh is built and maintained by the **MnM Developers** group:
+The Parakh backend provides a modular RESTful API architecture structured for integration:
+
+- **System Health & Readiness**: `/v1/health` verifies backend availability, database connectivity, and neural model readiness.
+- **Authentication Services**: `/auth/register`, `/auth/login`, and `/auth/me` manage secure user onboarding and credential issuance using Argon2id and JWT bearer tokens.
+- **Forensic Detection Services**:
+  - `/detections/image`: Authenticated image classification with user history logging.
+  - `/detections/video`: Asynchronous temporal video processing with progress tracking.
+  - `/v1/detect/ai-generated`: Direct inference endpoint for frontend workbench integration.
+- **History & Audit Queries**: `/detections` and `/detections/{id}` allow retrieval of inspection logs, frame scores, and timestamps.
+
+---
+
+## 👥 Contributions & Team
+
+### Engineering Contributions
+
+- **Yash Gupta**: Built the landing page, about page and login page, and handled model testing.
+- **Shivang Saxena**: Researched open-source models , built the backend and integrated the AI/ML in it.
+- **Charvi Goyal**: Working on the data analytics part and handling the database.
+- **Aditya Verma**: AI/ML model training.
+- **Agrima Tripathi**: Technical writer: documentation and project write-ups.
+
+### MnM Developers
 
 | Contributor | Role & Domain |
 | :--- | :--- |
@@ -256,4 +199,4 @@ Parakh is built and maintained by the **MnM Developers** group:
 ## 📄 License & Attribution
 
 Parakh is proprietary software developed by **MnM Developers**. All rights reserved.  
-Pretrained model weights provided via [DeepGuard](https://github.com/KoreaPeter) and [FaceForensics++](https://github.com/ondyari/FaceForensics).
+Pretrained model architectures and benchmark datasets provided via [DeepGuard](https://github.com/KoreaPeter) and [FaceForensics++](https://github.com/ondyari/FaceForensics).
