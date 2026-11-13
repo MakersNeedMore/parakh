@@ -60,3 +60,33 @@ def test_image_upload_rejects_unsupported_extension(client):
     client.post("/api/v1/auth/register", json={"email": "a@example.com", "password": "StrongPassword123!"})
     response = client.post("/api/v1/detections/image", files={"file": ("payload.exe", b"bad", "application/octet-stream")})
     assert response.status_code == 415
+
+
+def test_v1_detect_ai_generated_compatibility_route(monkeypatch, client):
+    def fake_analysis(path):
+        return {
+            "verdict": "likely_manipulated",
+            "fake_probability": 0.85,
+            "model_id": "KoreaPeter/ms-eff-gcvit-deepfake-b0-ff-plus-plus",
+            "total_frames": 1,
+            "scored_frames": 1,
+            "duration_seconds": None,
+            "frame_results": [],
+            "suspicious_segments": [],
+        }
+
+    monkeypatch.setattr("app.main.analyze_image_path", fake_analysis)
+    buffer = BytesIO()
+    Image.new("RGB", (100, 100), (200, 100, 50)).save(buffer, format="PNG")
+    buffer.seek(0)
+
+    res = client.post("/v1/detect/ai-generated", files={"image": ("face.png", buffer.getvalue(), "image/png")})
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["engine"] == "ai-generated-detector"
+    assert data["score"] == 85
+    assert data["status"] == "flagged"
+
+    health = client.get("/v1/health")
+    assert health.status_code == 200
+    assert health.json()["ok"] is True

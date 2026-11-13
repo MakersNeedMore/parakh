@@ -17,11 +17,46 @@ Thumbs.db
 *.pem
 .vscode/
 .idea/
-# Parakh inference backend: weights are downloaded, never committed.
-backend/models/*.onnx
-backend/models/*.json
-backend/__pycache__/
-backend/*/__pycache__/
-*.pyc
+# Environments & Virtual Environments
+.env
+.env*.local
 .venv/
 venv/
+env/
+ENV/
+
+# Python Cache & Bytecode
+backend/__pycache__/
+backend/*/__pycache__/
+deepfake-backend/**/__pycache__/
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# Testing & Coverage
+.pytest_cache/
+deepfake-backend/.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Databases & Uploads
+*.db
+*.sqlite
+*.sqlite3
+test_deepfake.db
+deepfake-backend/test_deepfake.db
+deepfake-backend/test_uploads/
+deepfake-backend/uploads/*
+!deepfake-backend/uploads/.gitkeep
+evaluation-output/
+
+# Parakh inference backend weights & models
+backend/models/*.onnx
+backend/models/*.json
+
+# Archives
+*.zip
+

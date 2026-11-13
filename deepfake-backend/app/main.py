@@ -124,6 +124,54 @@ def root():
     return {"name": settings.app_name, "version": app.version, "docs": "/docs", "api_prefix": settings.api_prefix}
 
 
+@app.get("/v1/health", tags=["system"])
+def v1_health():
+    return {"ok": True, "modelReady": classifier.model_loaded, "model": settings.deepfake_model_id}
+
+
+@app.post("/v1/detect/ai-generated", tags=["detection"])
+async def detect_ai_generated(image: UploadFile = File(...)):
+    path, original = await _save_upload(image, _IMAGE_EXTENSIONS, settings.max_image_mb * 1024 * 1024)
+    try:
+        t0 = datetime.now(timezone.utc)
+        result = await run_in_threadpool(analyze_image_path, path)
+        fake_prob = float(result["fake_probability"])
+        score = round(fake_prob * 100)
+        status_val = "flagged" if fake_prob >= 0.6 else ("uncertain" if fake_prob >= 0.4 else "likely-real")
+        runtime_ms = round((datetime.now(timezone.utc) - t0).total_seconds() * 1000)
+        return {
+            "engine": "ai-generated-detector",
+            "name": "AI-Generated Image Detector",
+            "version": f"DeepGuard-FaceForensics++ ({result['model_id']})",
+            "score": score,
+            "status": status_val,
+            "runtimeMs": runtime_ms,
+            "details": [
+                f"Deepfake / manipulation probability: {fake_prob * 100:.1f}%",
+                f"Verdict: {result['verdict']}",
+                f"Model: {result['model_id']}",
+            ],
+            "limitations": [
+                "Statistical detector based on FaceForensics++: not definitive proof of manipulation.",
+                "Heavy post-processing, recompression, or extreme angles can influence scores.",
+            ],
+        }
+    except Exception as exc:
+        logger.exception("AI generation detection error")
+        return {
+            "engine": "ai-generated-detector",
+            "name": "AI-Generated Image Detector",
+            "version": "DeepGuard",
+            "score": None,
+            "status": "unavailable",
+            "runtimeMs": 0,
+            "details": [f"Detection unavailable: {str(exc)}"],
+            "limitations": ["Ensure clear face image is provided."],
+        }
+    finally:
+        path.unlink(missing_ok=True)
+
+
 @app.get("/health", tags=["system"])
 def health(db: Session = Depends(get_db)):
     try:

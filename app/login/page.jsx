@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Navbar from '../../components/Navbar';
 import { setSession } from '../../lib/auth';
+import { login as apiLogin, register as apiRegister } from '../../lib/parakh-api.js';
 import './login.css';
 
 // view: 'login' | 'register' | 'forgot'
@@ -27,32 +28,39 @@ export default function LoginPage() {
     setMessage(null);
 
     if (view === 'register') {
-      if (password.length < 8) return setMessage({ type: 'error', text: 'Password must be at least 8 characters.' });
+      if (password.length < 10) return setMessage({ type: 'error', text: 'Password must be at least 10 characters.' });
       if (password !== confirm) return setMessage({ type: 'error', text: 'Passwords do not match.' });
     }
 
     setLoading(true);
     try {
-      // TODO: connect to the backend auth endpoints once they are ready, e.g.
-      // const res = await fetch(`${process.env.NEXT_PUBLIC_PARAKH_BACKEND}/v1/auth/login`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password }),
-      // });
-      await new Promise((r) => setTimeout(r, 600)); // placeholder
-
       if (view === 'forgot') {
         setMessage({ type: 'success', text: 'If this email is registered, a reset link will be sent.' });
+      } else if (view === 'register') {
+        const res = await apiRegister(email, password);
+        setSession({
+          email: res.user.email,
+          id: res.user.id,
+          name: name || email.split('@')[0],
+          token: res.access_token,
+        });
+        const next = new URLSearchParams(window.location.search).get('next');
+        window.location.assign(next && next.startsWith('/') && !next.startsWith('//') ? next : '/analyze');
+        return;
       } else {
-        // Replace with the real backend response once auth is ready.
-        setSession({ email, name: view === 'register' ? name : undefined });
-        // Go back to where the user came from (e.g. /analyze?download=1). Only same-site paths are allowed.
+        const res = await apiLogin(email, password);
+        setSession({
+          email: res.user.email,
+          id: res.user.id,
+          name: res.user.email.split('@')[0],
+          token: res.access_token,
+        });
         const next = new URLSearchParams(window.location.search).get('next');
         window.location.assign(next && next.startsWith('/') && !next.startsWith('//') ? next : '/analyze');
         return;
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Something went wrong. Please try again.' });
+      setMessage({ type: 'error', text: err?.message || 'Authentication failed. Please verify credentials.' });
     } finally {
       setLoading(false);
     }
@@ -92,7 +100,7 @@ export default function LoginPage() {
             {view !== 'forgot' && (
               <label className="login-field">
                 <span>Password</span>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required autoComplete={view === 'login' ? 'current-password' : 'new-password'} />
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 10 characters" required autoComplete={view === 'login' ? 'current-password' : 'new-password'} />
               </label>
             )}
 
