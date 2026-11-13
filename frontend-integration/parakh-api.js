@@ -4,8 +4,11 @@
  */
 
 const DEFAULT_API_BASE = "http://127.0.0.1:8000/api/v1";
+const ENV_API_URL = typeof process !== "undefined"
+  ? (process.env?.NEXT_PUBLIC_PARAKH_API_URL || (process.env?.NEXT_PUBLIC_PARAKH_BACKEND ? `${process.env.NEXT_PUBLIC_PARAKH_BACKEND.replace(/\/$/, '')}/api/v1` : null))
+  : null;
 
-let apiBase = (typeof window !== "undefined" && window.PARAKH_API_URL) || DEFAULT_API_BASE;
+let apiBase = (typeof window !== "undefined" && (window.PARAKH_API_URL || window.__PARAKH_API_URL__)) || ENV_API_URL || DEFAULT_API_BASE;
 let accessToken = null;
 
 export function setApiBase(url) {

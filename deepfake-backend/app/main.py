@@ -64,7 +64,24 @@ def _safe_original_filename(filename: str | None) -> str:
     return (candidate[:250] or "upload")
 
 
+def _validate_magic_bytes(header: bytes, ext: str) -> bool:
+    if ext in {".jpg", ".jpeg"}:
+        return header.startswith(b"\xff\xd8\xff")
+    if ext == ".png":
+        return header.startswith(b"\x89PNG\r\n\x1a\n")
+    if ext == ".webp":
+        return len(header) >= 12 and header.startswith(b"RIFF") and header[8:12] == b"WEBP"
+    if ext == ".mp4":
+        return len(header) >= 8 and (b"ftyp" in header[:32] or b"moov" in header[:32] or b"\x00\x00\x00" in header[:4])
+    return False
+
+
 async def _save_upload(upload: UploadFile, allowed_extensions: set[str], max_bytes: int) -> tuple[Path, str]:
+    # Reject oversized requests early if Content-Length is provided
+    content_length = upload.headers.get("content-length")
+    if content_length and content_length.isdigit() and int(content_length) > max_bytes:
+        raise HTTPException(status_code=413, detail=f"Upload exceeds the {max_bytes // (1024 * 1024)} MB limit")
+
     original = _safe_original_filename(upload.filename)
     ext = Path(original).suffix.lower()
     if ext not in allowed_extensions:
@@ -72,11 +89,26 @@ async def _save_upload(upload: UploadFile, allowed_extensions: set[str], max_byt
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail=f"Unsupported file extension. Allowed: {', '.join(sorted(allowed_extensions))}",
         )
-    destination = settings.upload_dir / f"{uuid4().hex}{ext}"
+
+    # Secure destination inside upload_dir
+    safe_dir = settings.upload_dir.resolve()
+    safe_dir.mkdir(parents=True, exist_ok=True)
+    destination = (safe_dir / f"{uuid4().hex}{ext}").resolve()
+    if not destination.is_relative_to(safe_dir):
+        raise HTTPException(status_code=400, detail="Invalid upload destination path")
+
     written = 0
+    first_chunk = True
     try:
         with destination.open("wb") as out:
             while chunk := await upload.read(1024 * 1024):
+                if first_chunk:
+                    if not _validate_magic_bytes(chunk, ext):
+                        raise HTTPException(
+                            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail="File content does not match the expected media signature",
+                        )
+                    first_chunk = False
                 written += len(chunk)
                 if written > max_bytes:
                     raise HTTPException(status_code=413, detail=f"Upload exceeds the {max_bytes // (1024 * 1024)} MB limit")

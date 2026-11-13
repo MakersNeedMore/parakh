@@ -7,15 +7,12 @@ The pixel detector (Step-2) lives in `backend/` (FastAPI + self-hosted ONNX,
 the image to it, so analysis can never get "stuck" loading weights in the browser.
 
 ```powershell
-# Terminal 1 — backend (one-time setup, then every session):
-cd d:\Parakh\backend
-pip install -r requirements.txt
-python scripts/download_model.py
-uvicorn app:app --port 8000
-# check: http://127.0.0.1:8000/v1/health  -> {"modelReady": true, ...}
+# Terminal 1 — backend:
+npm run dev:backend
+# Or: .\run_backend.ps1
+# Check health: http://127.0.0.1:8000/v1/health  -> {"ok": true, ...}
 
 # Terminal 2 — frontend:
-cd d:\Parakh
 npm install
 npm run dev   # http://localhost:3000
 ```
@@ -79,7 +76,7 @@ Parakh is developed and maintained by the **MnM Developers** group:
 | **Aditya Verma** | AI/ML & Backend |
 | **Charvi Goyal** | Data Science & Database |
 | **Agrima Tripathi** | Technical Writer |
-| **Shivang Saxena** | Backend & Auth |
+| **Shivang Saxena** | AI/ML, Backend & Auth |
 | **Tanu Thakur** | Backend, Database & Auth |
 | **Yash Gupta** | Frontend Developer |
 
@@ -87,11 +84,11 @@ Parakh is developed and maintained by the **MnM Developers** group:
 
 ## 🛠️ Technology Stack
 
-- **Frontend & Landing**: Next.js 14, React 18, Vanilla CSS Design System
-- **Core Modeling & AI Pipeline**: Python, PyTorch, OpenCV, CNN Binary Classification
-- **Data Engineering**: FaceForensics++, Pandas, NumPy
-- **Backend & Auth Services**: Node.js, Fastify, JWT Authentication, Microservices
-- **Deployment & Edge Infrastructure**: Vercel
+- **Frontend & UI Layer**: Next.js (App Router), React, Vanilla CSS Design System, WebGL
+- **Core Modeling & AI Pipeline**: Python, PyTorch, DeepGuard (MS-EffGCViT), YOLOv8 (`ultralytics`), OpenCV
+- **Authentication & Backend Services**: FastAPI, Argon2id (`argon2-cffi`), PyJWT, SQLAlchemy (SQLite/PostgreSQL)
+- **Forensic Verification**: C2PA Content Credentials SDK, Exif/Metadata Parser, JPEG/Blur Robustness Evaluator
+- **Deployment & Containers**: Docker, Docker Compose, Vercel
 
 ---
 
@@ -99,35 +96,47 @@ Parakh is developed and maintained by the **MnM Developers** group:
 
 ### Prerequisites
 - Node.js 18.x or later
-- npm or yarn
+- Python 3.10+ (Python 3.11 recommended)
 
-### Installation
-```bash
-git clone https://github.com/your-org/parakh.git
-cd parakh
-npm install
-```
+### Quick Start (Fullstack)
 
-### Running the Development Server
-```bash
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) in your browser to inspect the application.
+1. **Clone and install frontend dependencies**:
+   ```bash
+   git clone https://github.com/MakersNeedMore/parakh.git
+   cd parakh
+   npm install
+   ```
 
-### Building for Production
-```bash
-npm run build
-npm run start
-```
+2. **Start the FastAPI Backend & AI/ML Service**:
+   ```powershell
+   # Windows PowerShell
+   .\run_backend.ps1
+
+   # Or using npm
+   npm run dev:backend
+   ```
+   - Interactive Swagger API Documentation: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+   - Health Endpoint: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
+
+3. **Start the Next.js Frontend**:
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+4. **Running Backend Tests**:
+   ```bash
+   npm run test:backend
+   ```
 
 ---
 
 ## 🗺️ Project Roadmap
 
-- [x] Phase 1: High-performance parked preview portal and design system architecture.
+- [x] Phase 1: High-performance preview portal and design system architecture.
 - [x] Phase 2: SEO crawler integration, OpenGraph protocols, and structured metadata schemas.
-- [ ] Phase 3: Core binary classifier inference pipeline integration.
-- [ ] Phase 4: Video frame ingestion, sliding-window temporal aggregation, and attention heatmaps.
+- [x] Phase 3: Core binary classifier inference pipeline integration (DeepGuard MS-EffGCViT + FaceForensics++).
+- [x] Phase 4: Video frame ingestion, temporal aggregation, and cryptographic C2PA signature validation.
 - [ ] Phase 5: Production cloud deployment on `parakh.xyz` and `pixpect.xyz`.
 
 ---

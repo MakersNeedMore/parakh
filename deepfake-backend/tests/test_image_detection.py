@@ -62,6 +62,20 @@ def test_image_upload_rejects_unsupported_extension(client):
     assert response.status_code == 415
 
 
+def test_image_upload_rejects_spoofed_magic_bytes(client):
+    reg = client.post("/api/v1/auth/register", json={"email": "spoof@example.com", "password": "StrongPassword123!"})
+    assert reg.status_code == 201
+    token = reg.json()["access_token"]
+    # Malicious file disguised as JPEG
+    response = client.post(
+        "/api/v1/detections/image",
+        headers={"Authorization": f"Bearer {token}"},
+        files={"file": ("malicious.jpg", b"NOT_A_REAL_JPEG_IMAGE_PAYLOAD", "image/jpeg")},
+    )
+    assert response.status_code == 422
+    assert "media signature" in response.json()["detail"]
+
+
 def test_v1_detect_ai_generated_compatibility_route(monkeypatch, client):
     def fake_analysis(path):
         return {

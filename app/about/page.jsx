@@ -14,7 +14,7 @@ const contributions = [
   },
   {
     work:
-      'Researched open-source models , built the backend .',
+      'Researched open-source models , built the backend and integrated the AI/ML in it.',
     name: 'Shivang Saxena',
   },
   {
@@ -35,7 +35,7 @@ const contributions = [
 const team = [
   { name: 'Yash Gupta', role: 'Frontend Developer', img: '/assets/team/yash-gupta.jpg' },
   { name: 'Aditya Verma', role: 'AI/ML & Backend', img: '/assets/team/aditya-verma.jpg' },
-  { name: 'Shivang Saxena', role: 'Backend & Auth', img: '/assets/team/shivang-saxena.png' },
+  { name: 'Shivang Saxena', role: 'AI/ML, Backend & Auth', img: '/assets/team/shivang-saxena.png' },
   { name: 'Tanu Thakur', role: 'Backend, Database & Auth', img: '/assets/team/tanu.jpg' },
   { name: 'Charvi Goyal', role: 'Data Science & Database', img: '/assets/team/charvi-goyal.jpg' },
   { name: 'Agrima Tripathi', role: 'Technical Writer', img: '/assets/team/agrima-tripathi.jpg' },

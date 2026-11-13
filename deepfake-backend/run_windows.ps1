@@ -1,5 +1,21 @@
 $ErrorActionPreference = "Stop"
-if (-not (Test-Path ".venv\Scripts\python.exe")) {
-    throw "Virtual environment missing. Run .\setup_windows.ps1 first."
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+# Look for virtual environment in script directory or parent directory
+$VenvPython = Join-Path $ScriptDir ".venv\Scripts\python.exe"
+$ParentVenvPython = Join-Path (Split-Path -Parent $ScriptDir) ".venv\Scripts\python.exe"
+
+if (Test-Path $VenvPython) {
+    $PythonExe = $VenvPython
+} elseif (Test-Path $ParentVenvPython) {
+    $PythonExe = $ParentVenvPython
+} elseif (Get-Command "python" -ErrorAction SilentlyContinue) {
+    $PythonExe = "python"
+    Write-Host "Virtual environment not detected; using system python on PATH." -ForegroundColor Yellow
+} else {
+    throw "Python environment missing. Run .\setup_windows.ps1 first."
 }
-& .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+Set-Location $ScriptDir
+Write-Host "Starting Parakh FastAPI Backend on http://127.0.0.1:8000 ..." -ForegroundColor Cyan
+& $PythonExe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000

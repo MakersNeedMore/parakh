@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     database_url: str = "sqlite:///./deepfake.db"
     upload_dir: Path = Path("./uploads")
-    cors_origins: str = "http://localhost:3000,http://localhost:5173,https://anuragverma0907.github.io,https://parakh.xyz,https://pixpect.xyz"
+    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,https://anuragverma0907.github.io,https://parakh.xyz,https://pixpect.xyz"
     cookie_name: str = "deepfake_access"
     cookie_secure: bool = False
     cookie_samesite: str = "lax"
