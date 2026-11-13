@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Navbar from '../../components/Navbar';
+import { setSession } from '../../lib/auth';
 import './login.css';
 
 // view: 'login' | 'register' | 'forgot'
@@ -40,9 +41,16 @@ export default function LoginPage() {
       // });
       await new Promise((r) => setTimeout(r, 600)); // placeholder
 
-      if (view === 'login') setMessage({ type: 'success', text: 'Login form submitted (backend not connected yet).' });
-      if (view === 'register') setMessage({ type: 'success', text: 'Account details submitted (backend not connected yet).' });
-      if (view === 'forgot') setMessage({ type: 'success', text: 'If this email is registered, a reset link will be sent.' });
+      if (view === 'forgot') {
+        setMessage({ type: 'success', text: 'If this email is registered, a reset link will be sent.' });
+      } else {
+        // Replace with the real backend response once auth is ready.
+        setSession({ email, name: view === 'register' ? name : undefined });
+        // Go back to where the user came from (e.g. /analyze?download=1). Only same-site paths are allowed.
+        const next = new URLSearchParams(window.location.search).get('next');
+        window.location.assign(next && next.startsWith('/') && !next.startsWith('//') ? next : '/analyze');
+        return;
+      }
     } catch (err) {
       setMessage({ type: 'error', text: 'Something went wrong. Please try again.' });
     } finally {
