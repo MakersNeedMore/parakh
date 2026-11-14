@@ -1,12 +1,25 @@
+import os
 from functools import lru_cache
 from pathlib import Path
 
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
+_REPO_ROOT = _BACKEND_DIR.parent
+_ENV_SEARCH_PATHS = (
+    str(_REPO_ROOT / ".env"),
+    str(_BACKEND_DIR / ".env"),
+    ".env",
+)
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=_ENV_SEARCH_PATHS,
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     app_name: str = "Parakh Deepfake Detection API"
     environment: str = "development"
@@ -28,6 +41,8 @@ class Settings(BaseSettings):
     default_video_samples: int = 12
     fake_threshold: float = 0.5
     deepfake_model_id: str = "KoreaPeter/ms-eff-gcvit-deepfake-b0-ff-plus-plus"
+    model_revision: str | None = None
+    hf_token: str | None = None
     model_device: str = "auto"
 
     @property
@@ -69,15 +84,16 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_prod_settings(self):
-        if self.environment.lower() == "production":
+        env = self.environment.lower()
+        if env in {"production", "prod", "live", "staging"}:
             if len(self.secret_key) < 32 or self.secret_key.startswith("insecure-") or "replace-this" in self.secret_key:
-                raise ValueError("Set a unique SECRET_KEY of at least 32 characters in production")
+                raise ValueError("Set a unique SECRET_KEY of at least 32 characters in production environments")
             if not self.cookie_secure:
-                raise ValueError("COOKIE_SECURE=true is required in production")
+                raise ValueError("COOKIE_SECURE=true is required in production environments")
             if self.cookie_samesite == "none" and not self.cookie_secure:
                 raise ValueError("SameSite=None requires Secure cookies")
             if "*" in self.cors_origin_list:
-                raise ValueError("Wildcard CORS origins are not allowed in production")
+                raise ValueError("Wildcard CORS origins are not allowed in production environments")
         return self
 
 

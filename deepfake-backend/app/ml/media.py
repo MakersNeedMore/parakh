@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
-from PIL import Image, ImageFile
+from PIL import Image, ImageFile, ImageOps
 
 from app.config import settings
 
@@ -32,7 +32,9 @@ def open_validated_image(path: str | Path) -> Image.Image:
         with Image.open(path) as image:
             if image.width * image.height > settings.max_image_pixels:
                 raise InvalidMediaError("Image pixel count exceeds the configured limit")
-            return image.convert("RGB")
+            # Correct EXIF rotation so portrait smartphone images aren't analyzed sideways
+            oriented = ImageOps.exif_transpose(image)
+            return oriented.convert("RGB")
     except InvalidMediaError:
         raise
     except Exception as exc:

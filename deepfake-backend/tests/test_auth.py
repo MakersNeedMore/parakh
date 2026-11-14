@@ -59,3 +59,19 @@ def test_dual_route_auth_compatibility(client):
     log_root = client.post("/auth/login", json={"email": "dualroute@example.com", "password": "Password12345!"})
     assert log_root.status_code == 200
     assert log_root.json()["access_token"]
+
+
+def test_revoked_token_cannot_be_reused(client):
+    reg = client.post("/api/v1/auth/register", json={"email": "revoke_test@example.com", "password": "StrongPassword123!"})
+    assert reg.status_code == 201
+    token = reg.json()["access_token"]
+
+    # Works before logout
+    assert client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 200
+
+    # Logout with bearer header revokes token
+    logout_res = client.post("/api/v1/auth/logout", headers={"Authorization": f"Bearer {token}"})
+    assert logout_res.status_code == 204
+
+    # Token cannot be reused after logout
+    assert client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 401

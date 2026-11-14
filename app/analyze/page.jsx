@@ -345,7 +345,7 @@ export default function AnalyzePage() {
                 <div className="scorecard-grid">
                   {report.engines.map((eng) => {
                     const val = eng.score == null ? 0 : eng.score;
-                    const theme = getMetricStyle(eng.status === 'informational' ? 50 : val);
+                    const theme = getMetricStyle(eng.score == null || eng.status === 'informational' ? 50 : val);
                     const circumference = 238.76;
                     const strokeOffset = circumference - (circumference * val) / 100;
                     return (

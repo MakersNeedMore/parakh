@@ -127,12 +127,18 @@ class DeepGuardClassifier:
                 else:
                     raise ValueError("MODEL_DEVICE must be auto, cpu, -1, or a CUDA device index")
 
-                self._pipeline = pipeline(
-                    "image-classification",
-                    model=settings.deepfake_model_id,
-                    trust_remote_code=True,
-                    device=device,
-                )
+                pipeline_kwargs: dict[str, Any] = {
+                    "task": "image-classification",
+                    "model": settings.deepfake_model_id,
+                    "trust_remote_code": True,
+                    "device": device,
+                }
+                if settings.hf_token:
+                    pipeline_kwargs["token"] = settings.hf_token
+                if settings.model_revision:
+                    pipeline_kwargs["revision"] = settings.model_revision
+
+                self._pipeline = pipeline(**pipeline_kwargs)
                 self._load_error = None
             except Exception as exc:  # Keep infra details in server logs, not API output.
                 self._load_error = f"{type(exc).__name__}: {exc}"
@@ -143,18 +149,67 @@ class DeepGuardClassifier:
                 ) from exc
 
     @staticmethod
-    def _flatten_predictions(raw: Any) -> list[dict[str, Any]]:
+    def _extract_face_groups(raw: Any) -> list[list[dict[str, Any]]]:
         if isinstance(raw, dict):
-            return [raw]
-        if isinstance(raw, list):
-            flattened: list[dict[str, Any]] = []
-            for item in raw:
-                if isinstance(item, dict):
-                    flattened.append(item)
-                elif isinstance(item, list):
-                    flattened.extend(x for x in item if isinstance(x, dict))
-            return flattened
-        return []
+            return [[raw]]
+        if not isinstance(raw, list) or not raw:
+            return []
+
+        # If it's already a list of lists of predictions: [[{...}, {...}], [{...}, {...}]]
+        if isinstance(raw[0], list):
+            return [x for x in raw if isinstance(x, list)]
+
+        # If it's a flat list of dicts, check for repeated labels which indicates multiple faces
+        groups: list[list[dict[str, Any]]] = []
+        current_group: list[dict[str, Any]] = []
+        seen_labels: set[str] = set()
+
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            lbl = str(item.get("label", "")).strip().lower()
+            if lbl in seen_labels and current_group:
+                groups.append(current_group)
+                current_group = [item]
+                seen_labels = {lbl}
+            else:
+                current_group.append(item)
+                seen_labels.add(lbl)
+
+        if current_group:
+            groups.append(current_group)
+        return groups
+
+    @staticmethod
+    def _parse_face_prob(group: list[dict[str, Any]]) -> tuple[float | None, bool]:
+        """Returns (probability, is_no_face). If unknown labels, raises ModelUnavailableError."""
+        scores: dict[str, float] = {}
+        for row in group:
+            label = str(row.get("label", "")).strip().lower()
+            if "no_face" in label:
+                return (None, True)
+            score = row.get("score")
+            if label and isinstance(score, (int, float)):
+                scores[label] = max(0.0, min(1.0, float(score)))
+
+        if not scores:
+            return (None, False)
+
+        if "fake" in scores:
+            prob = scores["fake"]
+            if "real" in scores and abs((scores["real"] + prob) - 1.0) < 0.15:
+                total = scores["real"] + prob
+                if total > 0:
+                    prob /= total
+            return (prob, False)
+        elif "label_1" in scores and "label_0" in scores:
+            total = scores["label_1"] + scores["label_0"]
+            prob = scores["label_1"] / total if total > 0 else scores["label_1"]
+            return (prob, False)
+        elif len(scores) == 1 and next(iter(scores)).startswith("label_1"):
+            return (next(iter(scores.values())), False)
+
+        raise ModelUnavailableError(f"Unexpected model labels: {list(scores.keys())}")
 
     def predict_image(self, image: Image.Image) -> Prediction:
         self._ensure_loaded()
@@ -176,45 +231,33 @@ class DeepGuardClassifier:
                 "Model inference failed. Check the server logs and verify model/dependency compatibility."
             ) from exc
 
-        rows = self._flatten_predictions(raw)
-        if not rows:
+        face_groups = self._extract_face_groups(raw)
+        if not face_groups:
             raise NoFacePredictionError(
                 "The model did not return a score. Try a clear image with a visible face."
             )
 
-        # Handle face detection failure from the pipeline (e.g. YOLO found no face)
-        for row in rows:
-            label = str(row.get("label", "")).strip().lower()
-            if "no_face" in label:
+        face_probs: list[float] = []
+        has_no_face_signal = False
+
+        for group in face_groups:
+            prob, no_face = self._parse_face_prob(group)
+            if prob is not None:
+                face_probs.append(prob)
+            elif no_face:
+                has_no_face_signal = True
+
+        if not face_probs:
+            if has_no_face_signal:
                 raise NoFacePredictionError(
                     "No face detected in the image. Try a clear image with a visible face."
                 )
-
-        scores: dict[str, float] = {}
-        for row in rows:
-            label = str(row.get("label", "")).strip().lower()
-            score = row.get("score")
-            if label and isinstance(score, (int, float)):
-                scores[label] = max(0.0, min(1.0, float(score)))
-
-        # DeepGuard's model card specifies labels 'real' and 'fake'.
-        if "fake" in scores:
-            fake_probability = scores["fake"]
-            if "real" in scores and abs((scores["real"] + fake_probability) - 1.0) < 0.1:
-                total = scores["real"] + fake_probability
-                if total > 0:
-                    fake_probability /= total
-        elif "label_1" in scores and "label_0" in scores:
-            total = scores["label_1"] + scores["label_0"]
-            fake_probability = scores["label_1"] / total if total > 0 else scores["label_1"]
-        elif len(scores) == 1 and next(iter(scores)).startswith("label_1"):
-            fake_probability = next(iter(scores.values()))
-        else:
             raise ModelUnavailableError(
-                f"Unexpected model labels {sorted(scores)}; expected 'real' and 'fake'."
+                "Unexpected model labels in inference output."
             )
 
-        fake_probability = max(0.0, min(1.0, float(fake_probability)))
+        # In multi-face imagery, if any face is manipulated, the asset is flagged.
+        fake_probability = max(0.0, min(1.0, float(max(face_probs))))
         return Prediction(
             fake_probability=fake_probability,
             real_probability=1.0 - fake_probability,

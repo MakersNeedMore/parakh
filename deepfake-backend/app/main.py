@@ -24,7 +24,7 @@ from app.ml.model_service import ModelUnavailableError, NoFacePredictionError, c
 from app.ml.pipeline import analyze_image_path
 from app.models import Detection, User
 from app.schemas import AuthResponse, DetectionOut, LoginRequest, RegisterRequest, UserOut
-from app.security import create_access_token, hash_password, verify_password
+from app.security import create_access_token, dummy_verify_password, hash_password, revoke_token, verify_password
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -72,14 +72,16 @@ def _validate_magic_bytes(header: bytes, ext: str) -> bool:
     if ext == ".webp":
         return len(header) >= 12 and header.startswith(b"RIFF") and header[8:12] == b"WEBP"
     if ext == ".mp4":
-        return len(header) >= 8 and (b"ftyp" in header[:32] or b"moov" in header[:32] or b"\x00\x00\x00" in header[:4])
+        return len(header) >= 8 and (b"ftyp" in header[4:32] or b"moov" in header[4:32])
     return False
 
 
 async def _save_upload(upload: UploadFile, allowed_extensions: set[str], max_bytes: int) -> tuple[Path, str]:
-    # Reject oversized requests early if Content-Length is provided
+    # Reject oversized requests early if Content-Length or upload.size is provided
     content_length = upload.headers.get("content-length")
     if content_length and content_length.isdigit() and int(content_length) > max_bytes:
+        raise HTTPException(status_code=413, detail=f"Upload exceeds the {max_bytes // (1024 * 1024)} MB limit")
+    if upload.size is not None and upload.size > max_bytes:
         raise HTTPException(status_code=413, detail=f"Upload exceeds the {max_bytes // (1024 * 1024)} MB limit")
 
     original = _safe_original_filename(upload.filename)
@@ -177,7 +179,7 @@ async def detect_ai_generated(
         result = await run_in_threadpool(analyze_image_path, path)
         fake_prob = float(result["fake_probability"])
         score = round(fake_prob * 100)
-        status_val = "flagged" if fake_prob >= 0.6 else ("uncertain" if fake_prob >= 0.4 else "likely-real")
+        status_val = "flagged" if fake_prob >= settings.fake_threshold else ("uncertain" if fake_prob >= 0.4 else "likely-real")
         runtime_ms = round((datetime.now(timezone.utc) - t0).total_seconds() * 1000)
         return {
             "engine": "ai-generated-detector",
@@ -252,7 +254,10 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
     email = str(payload.email).strip().lower()
     user = db.scalar(select(User).where(User.email == email))
     # Same response for unknown account and wrong password reduces account enumeration.
-    if not user or not verify_password(payload.password, user.password_hash) or not user.is_active:
+    if not user:
+        dummy_verify_password(payload.password)
+        raise HTTPException(status_code=401, detail="Incorrect email or password")
+    if not verify_password(payload.password, user.password_hash) or not user.is_active:
         raise HTTPException(status_code=401, detail="Incorrect email or password")
     token = _set_auth_cookie(response, user.id)
     return AuthResponse(user=UserOut.model_validate(user), message="Login successful", access_token=token)
@@ -260,7 +265,13 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
 
 @app.post(f"{settings.api_prefix}/auth/logout", status_code=204, tags=["authentication"])
 @app.post("/auth/logout", status_code=204, tags=["authentication"], include_in_schema=False)
-def logout(response: Response) -> None:
+def logout(request: Request, response: Response) -> None:
+    cookie_token = request.cookies.get(settings.cookie_name)
+    if cookie_token:
+        revoke_token(cookie_token)
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        revoke_token(auth_header.split(" ", 1)[1].strip())
     response.delete_cookie(key=settings.cookie_name, path="/", secure=settings.cookie_secure, httponly=True, samesite=settings.cookie_samesite)
     return None
 
@@ -298,30 +309,42 @@ async def detect_image(
         db.refresh(detection)
         return detection
     except InvalidMediaError as exc:
-        detection.status = "failed"
-        detection.error_message = str(exc)
-        detection.completed_at = datetime.now(timezone.utc)
-        db.commit()
+        db.rollback()
+        det = db.get(Detection, detection.id)
+        if det:
+            det.status = "failed"
+            det.error_message = str(exc)
+            det.completed_at = datetime.now(timezone.utc)
+            db.commit()
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except NoFacePredictionError as exc:
-        detection.status = "failed"
-        detection.error_message = str(exc)
-        detection.completed_at = datetime.now(timezone.utc)
-        db.commit()
+        db.rollback()
+        det = db.get(Detection, detection.id)
+        if det:
+            det.status = "failed"
+            det.error_message = str(exc)
+            det.completed_at = datetime.now(timezone.utc)
+            db.commit()
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ModelUnavailableError as exc:
         logger.exception("Image model unavailable")
-        detection.status = "failed"
-        detection.error_message = "Inference model unavailable. Check ML dependencies, model access, and server logs."
-        detection.completed_at = datetime.now(timezone.utc)
-        db.commit()
+        db.rollback()
+        det = db.get(Detection, detection.id)
+        if det:
+            det.status = "failed"
+            det.error_message = "Inference model unavailable. Check ML dependencies, model access, and server logs."
+            det.completed_at = datetime.now(timezone.utc)
+            db.commit()
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
         logger.exception("Unexpected image detection failure")
-        detection.status = "failed"
-        detection.error_message = "Image processing failed. Check server logs."
-        detection.completed_at = datetime.now(timezone.utc)
-        db.commit()
+        db.rollback()
+        det = db.get(Detection, detection.id)
+        if det:
+            det.status = "failed"
+            det.error_message = "Image processing failed. Check server logs."
+            det.completed_at = datetime.now(timezone.utc)
+            db.commit()
         raise HTTPException(status_code=500, detail="Image processing failed. Check server logs.") from exc
     finally:
         path.unlink(missing_ok=True)
@@ -369,7 +392,7 @@ def list_detections(
 
 
 @app.get(f"{settings.api_prefix}/detections/{{detection_id}}", response_model=DetectionOut, tags=["detection"])
-@app.get("/detections/{{detection_id}}", response_model=DetectionOut, tags=["detection"], include_in_schema=False)
+@app.get("/detections/{detection_id}", response_model=DetectionOut, tags=["detection"], include_in_schema=False)
 def get_detection(detection_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     detection = db.get(Detection, detection_id)
     if detection is None or detection.owner_id != user.id:
@@ -378,6 +401,7 @@ def get_detection(detection_id: str, db: Session = Depends(get_db), user: User =
 
 
 @app.get(f"{settings.api_prefix}/detections/{{detection_id}}/frames", tags=["detection"])
+@app.get("/detections/{detection_id}/frames", tags=["detection"], include_in_schema=False)
 def get_detection_frames(detection_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     detection = db.get(Detection, detection_id)
     if detection is None or detection.owner_id != user.id:
@@ -386,6 +410,7 @@ def get_detection_frames(detection_id: str, db: Session = Depends(get_db), user:
 
 
 @app.get(f"{settings.api_prefix}/detections/{{detection_id}}/timeline", tags=["detection"])
+@app.get("/detections/{detection_id}/timeline", tags=["detection"], include_in_schema=False)
 def get_detection_timeline(detection_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     detection = db.get(Detection, detection_id)
     if detection is None or detection.owner_id != user.id:
@@ -401,10 +426,12 @@ def get_detection_timeline(detection_id: str, db: Session = Depends(get_db), use
 
 
 @app.delete(f"{settings.api_prefix}/detections/{{detection_id}}", status_code=204, tags=["detection"])
+@app.delete("/detections/{detection_id}", status_code=204, tags=["detection"], include_in_schema=False)
 def delete_detection(detection_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> None:
     detection = db.get(Detection, detection_id)
     if detection is None or detection.owner_id != user.id:
         raise HTTPException(status_code=404, detail="Detection not found")
     db.delete(detection)
     db.commit()
+    return None
     return None

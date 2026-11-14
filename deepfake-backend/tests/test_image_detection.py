@@ -109,3 +109,51 @@ def test_v1_detect_ai_generated_compatibility_route(monkeypatch, client):
     res_prefixed = client.post("/api/v1/detect/ai-generated", files={"file": ("face.png", buffer.getvalue(), "image/png")})
     assert res_prefixed.status_code == 200
     assert res_prefixed.json()["score"] == 85
+
+
+def test_root_path_detection_routes(monkeypatch, client):
+    reg = client.post("/auth/register", json={"email": "rootroutes@example.com", "password": "Password12345!"})
+    token = reg.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    def fake_analysis(path):
+        return {
+            "verdict": "likely_authentic",
+            "fake_probability": 0.05,
+            "model_id": "test-model",
+            "total_frames": 1,
+            "scored_frames": 1,
+            "duration_seconds": 1.0,
+            "frame_results": [{"frame_index": 0, "timestamp_seconds": 0.0, "fake_probability": 0.05, "verdict": "likely_authentic", "note": None}],
+            "suspicious_segments": [],
+        }
+
+    monkeypatch.setattr("app.main.analyze_image_path", fake_analysis)
+    buffer = BytesIO()
+    Image.new("RGB", (100, 100), (200, 100, 50)).save(buffer, format="JPEG")
+    buffer.seek(0)
+
+    # Post detection at root path /detections/image
+    created = client.post("/detections/image", headers=headers, files={"file": ("face.jpg", buffer.getvalue(), "image/jpeg")})
+    assert created.status_code == 201
+    det_id = created.json()["id"]
+
+    # Test root GET /detections/{id}
+    get_res = client.get(f"/detections/{det_id}", headers=headers)
+    assert get_res.status_code == 200
+    assert get_res.json()["id"] == det_id
+
+    # Test root GET /detections/{id}/frames
+    frames_res = client.get(f"/detections/{det_id}/frames", headers=headers)
+    assert frames_res.status_code == 200
+    assert len(frames_res.json()["frames"]) == 1
+
+    # Test root GET /detections/{id}/timeline
+    tl_res = client.get(f"/detections/{det_id}/timeline", headers=headers)
+    assert tl_res.status_code == 200
+    assert "duration_seconds" in tl_res.json()
+
+    # Test root DELETE /detections/{id}
+    del_res = client.delete(f"/detections/{det_id}", headers=headers)
+    assert del_res.status_code == 204
+    assert client.get(f"/detections/{det_id}", headers=headers).status_code == 404

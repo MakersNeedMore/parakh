@@ -10,11 +10,22 @@ import sys
 
 _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 _BACKEND_DIR = os.path.join(_PROJECT_ROOT, "deepfake-backend")
-if _BACKEND_DIR not in sys.path:
-    sys.path.insert(0, _BACKEND_DIR)
 
-# Expose FastAPI application instance from deepfake-backend
-from app.main import app  # noqa: F401
+_current_mod = sys.modules.get("app")
+
+if _BACKEND_DIR in sys.path:
+    sys.path.remove(_BACKEND_DIR)
+sys.path.insert(0, _BACKEND_DIR)
+
+if "app" in sys.modules:
+    del sys.modules["app"]
+
+import app.main as _real_main
+
+app = _real_main.app
+
+if _current_mod is not None:
+    sys.modules["app"] = _current_mod
 
 if __name__ == "__main__":
     import uvicorn

@@ -44,3 +44,18 @@ def test_model_adapter_rejects_unknown_labels(monkeypatch):
     image = Image.new("RGB", (32, 32), (120, 120, 120))
     with pytest.raises(ModelUnavailableError, match="Unexpected model labels"):
         classifier.predict_image(image)
+
+
+def test_model_adapter_multi_face_takes_maximum_fake_score(monkeypatch):
+    # Pipeline returns two faces: first face is fake (0.85), second face is authentic (0.04)
+    # The aggregated image score must reflect the manipulated face (0.85), not be overwritten.
+    monkeypatch.setattr(classifier, "_pipeline", lambda image, **kwargs: [
+        {"label": "fake", "score": 0.85},
+        {"label": "real", "score": 0.15},
+        {"label": "fake", "score": 0.04},
+        {"label": "real", "score": 0.96},
+    ])
+    image = Image.new("RGB", (32, 32), (120, 120, 120))
+    result = classifier.predict_image(image)
+    assert abs(result.fake_probability - 0.85) < 1e-6
+    assert result.verdict == "likely_manipulated"

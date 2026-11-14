@@ -102,7 +102,17 @@ def analyze_video_path(path: str | Path, requested_samples: int | None = None) -
         raise NoFacePredictionError("No sampled frame could be scored. Try a video with clearly visible faces.")
 
     scores = [float(row["fake_probability"]) for row in scored]
-    aggregate_score = mean(scores)
+    mean_score = mean(scores)
+    max_score = max(scores)
+    # Peak-sensitive weighting: if any sampled frame exceeds the threshold, weight
+    # the peak manipulation score so short deepfake splices are not masked by authentic padding.
+    if max_score >= settings.fake_threshold:
+        aggregate_score = max(mean_score, 0.7 * max_score + 0.3 * mean_score)
+        agg_method = "peak_weighted_frame_probabilities"
+    else:
+        aggregate_score = mean_score
+        agg_method = "arithmetic_mean_of_scored_sampled_frame_probabilities"
+
     # Sample intervals are approximate; this is not frame-by-frame continuous analysis.
     sample_gap = info.duration_seconds / max(1, len(raw_frames) - 1) if len(raw_frames) > 1 else info.duration_seconds
     segments = _timeline(frame_results, info.duration_seconds, sample_gap)
@@ -115,6 +125,6 @@ def analyze_video_path(path: str | Path, requested_samples: int | None = None) -
         "duration_seconds": round(info.duration_seconds, 3),
         "frame_results": frame_results,
         "suspicious_segments": segments,
-        "aggregation_method": "arithmetic_mean_of_scored_sampled_frame_probabilities",
+        "aggregation_method": agg_method,
         "sampling_note": "Only sampled frames were analysed; timeline boundaries are approximate.",
     }
