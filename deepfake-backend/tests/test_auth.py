@@ -39,3 +39,23 @@ def test_invalid_credentials_do_not_authenticate(client):
 def test_detection_requires_auth(client):
     response = client.get("/api/v1/detections")
     assert response.status_code == 401
+
+
+def test_dual_route_auth_compatibility(client):
+    """Test that auth endpoints work both at /auth/... and /api/v1/auth/..."""
+    reg = client.post("/auth/register", json={"email": "dualroute@example.com", "password": "Password12345!"})
+    assert reg.status_code == 201, reg.text
+    token = reg.json()["access_token"]
+    assert token
+
+    me_root = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert me_root.status_code == 200
+    assert me_root.json()["email"] == "dualroute@example.com"
+
+    me_prefixed = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert me_prefixed.status_code == 200
+    assert me_prefixed.json()["email"] == "dualroute@example.com"
+
+    log_root = client.post("/auth/login", json={"email": "dualroute@example.com", "password": "Password12345!"})
+    assert log_root.status_code == 200
+    assert log_root.json()["access_token"]

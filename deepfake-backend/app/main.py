@@ -157,11 +157,13 @@ def root():
 
 
 @app.get("/v1/health", tags=["system"])
+@app.get(f"{settings.api_prefix}/health", tags=["system"], include_in_schema=False)
 def v1_health():
     return {"ok": True, "modelReady": classifier.model_loaded, "model": settings.deepfake_model_id}
 
 
 @app.post("/v1/detect/ai-generated", tags=["detection"])
+@app.post(f"{settings.api_prefix}/detect/ai-generated", tags=["detection"], include_in_schema=False)
 async def detect_ai_generated(
     image: UploadFile | None = File(None),
     file: UploadFile | None = File(None),
@@ -227,6 +229,7 @@ def health(db: Session = Depends(get_db)):
 
 
 @app.post(f"{settings.api_prefix}/auth/register", response_model=AuthResponse, status_code=201, tags=["authentication"])
+@app.post("/auth/register", response_model=AuthResponse, status_code=201, tags=["authentication"], include_in_schema=False)
 def register(payload: RegisterRequest, response: Response, db: Session = Depends(get_db)):
     email = str(payload.email).strip().lower()
     if len(payload.password) < 10:
@@ -244,6 +247,7 @@ def register(payload: RegisterRequest, response: Response, db: Session = Depends
 
 
 @app.post(f"{settings.api_prefix}/auth/login", response_model=AuthResponse, tags=["authentication"])
+@app.post("/auth/login", response_model=AuthResponse, tags=["authentication"], include_in_schema=False)
 def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)):
     email = str(payload.email).strip().lower()
     user = db.scalar(select(User).where(User.email == email))
@@ -255,17 +259,20 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
 
 
 @app.post(f"{settings.api_prefix}/auth/logout", status_code=204, tags=["authentication"])
+@app.post("/auth/logout", status_code=204, tags=["authentication"], include_in_schema=False)
 def logout(response: Response) -> None:
     response.delete_cookie(key=settings.cookie_name, path="/", secure=settings.cookie_secure, httponly=True, samesite=settings.cookie_samesite)
     return None
 
 
 @app.get(f"{settings.api_prefix}/auth/me", response_model=UserOut, tags=["authentication"])
+@app.get("/auth/me", response_model=UserOut, tags=["authentication"], include_in_schema=False)
 def me(user: User = Depends(get_current_user)):
     return user
 
 
 @app.post(f"{settings.api_prefix}/detections/image", response_model=DetectionOut, status_code=201, tags=["detection"])
+@app.post("/detections/image", response_model=DetectionOut, status_code=201, tags=["detection"], include_in_schema=False)
 async def detect_image(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
@@ -321,6 +328,7 @@ async def detect_image(
 
 
 @app.post(f"{settings.api_prefix}/detections/video", response_model=DetectionOut, status_code=202, tags=["detection"])
+@app.post("/detections/video", response_model=DetectionOut, status_code=202, tags=["detection"], include_in_schema=False)
 async def detect_video(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
@@ -349,6 +357,7 @@ async def detect_video(
 
 
 @app.get(f"{settings.api_prefix}/detections", response_model=list[DetectionOut], tags=["detection"])
+@app.get("/detections", response_model=list[DetectionOut], tags=["detection"], include_in_schema=False)
 def list_detections(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -360,6 +369,7 @@ def list_detections(
 
 
 @app.get(f"{settings.api_prefix}/detections/{{detection_id}}", response_model=DetectionOut, tags=["detection"])
+@app.get("/detections/{{detection_id}}", response_model=DetectionOut, tags=["detection"], include_in_schema=False)
 def get_detection(detection_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     detection = db.get(Detection, detection_id)
     if detection is None or detection.owner_id != user.id:

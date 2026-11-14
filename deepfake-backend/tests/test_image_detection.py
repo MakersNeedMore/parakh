@@ -104,3 +104,8 @@ def test_v1_detect_ai_generated_compatibility_route(monkeypatch, client):
     health = client.get("/v1/health")
     assert health.status_code == 200
     assert health.json()["ok"] is True
+
+    # Test alternate prefixed path and 'file' parameter compatibility
+    res_prefixed = client.post("/api/v1/detect/ai-generated", files={"file": ("face.png", buffer.getvalue(), "image/png")})
+    assert res_prefixed.status_code == 200
+    assert res_prefixed.json()["score"] == 85
