@@ -96,6 +96,14 @@ def analyze_video_path(path: str | Path, requested_samples: int | None = None) -
                 "verdict": "not_scored",
                 "note": str(exc),
             })
+        except Exception as exc:
+            frame_results.append({
+                "frame_index": int(frame_index),
+                "timestamp_seconds": round(float(timestamp), 3),
+                "fake_probability": None,
+                "verdict": "not_scored",
+                "note": f"Frame evaluation skipped: {exc}",
+            })
 
     scored = [row for row in frame_results if row["fake_probability"] is not None]
     if not scored:
@@ -104,11 +112,19 @@ def analyze_video_path(path: str | Path, requested_samples: int | None = None) -
     scores = [float(row["fake_probability"]) for row in scored]
     mean_score = mean(scores)
     max_score = max(scores)
-    # Peak-sensitive weighting: if any sampled frame exceeds the threshold, weight
-    # the peak manipulation score so short deepfake splices are not masked by authentic padding.
-    if max_score >= settings.fake_threshold:
-        aggregate_score = max(mean_score, 0.7 * max_score + 0.3 * mean_score)
-        agg_method = "peak_weighted_frame_probabilities"
+    suspicious_count = sum(1 for s in scores if s >= settings.fake_threshold)
+
+    # Peak-sensitive weighting:
+    # - If 2+ frames or >= 15% of frames exceed threshold, weight heavily
+    #   so deepfake splices/insertions are caught reliably.
+    # - If only 1 isolated frame spikes among many clean frames, apply moderate
+    #   weighting so transient single-frame noise does not alone flag an authentic video.
+    if suspicious_count >= 2 or (suspicious_count >= 1 and len(scores) <= 3) or (suspicious_count / max(1, len(scores)) >= 0.15):
+        aggregate_score = max(mean_score, 0.65 * max_score + 0.35 * mean_score)
+        agg_method = "clustered_peak_weighted_frame_probabilities"
+    elif suspicious_count == 1:
+        aggregate_score = max(mean_score, 0.35 * max_score + 0.65 * mean_score)
+        agg_method = "single_anomaly_damped_probabilities"
     else:
         aggregate_score = mean_score
         agg_method = "arithmetic_mean_of_scored_sampled_frame_probabilities"

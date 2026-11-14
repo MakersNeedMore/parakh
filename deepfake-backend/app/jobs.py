@@ -37,6 +37,7 @@ def process_video_job(detection_id: str, file_path: str, requested_samples: int)
         db.commit()
     except ModelUnavailableError:
         logger.exception("Model unavailable for video detection %s", detection_id)
+        db.rollback()
         detection = db.get(Detection, detection_id)
         if detection:
             detection.status = "failed"
@@ -44,6 +45,7 @@ def process_video_job(detection_id: str, file_path: str, requested_samples: int)
             detection.completed_at = datetime.now(timezone.utc)
             db.commit()
     except NoFacePredictionError as exc:
+        db.rollback()
         detection = db.get(Detection, detection_id)
         if detection:
             detection.status = "failed"
@@ -52,6 +54,7 @@ def process_video_job(detection_id: str, file_path: str, requested_samples: int)
             db.commit()
     except Exception:
         logger.exception("Video analysis failed for detection %s", detection_id)
+        db.rollback()
         detection = db.get(Detection, detection_id)
         if detection:
             detection.status = "failed"

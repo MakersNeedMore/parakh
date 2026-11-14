@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 import re
 import secrets
+import threading
+import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,7 +18,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.database import Base, engine, get_db
+from app.database import Base, SessionLocal, engine, get_db
 from app.dependencies import get_current_user
 from app.jobs import process_video_job
 from app.ml.media import InvalidMediaError, inspect_video, open_validated_image
@@ -24,7 +26,7 @@ from app.ml.model_service import ModelUnavailableError, NoFacePredictionError, c
 from app.ml.pipeline import analyze_image_path
 from app.models import Detection, User
 from app.schemas import AuthResponse, DetectionOut, LoginRequest, RegisterRequest, UserOut
-from app.security import create_access_token, dummy_verify_password, hash_password, revoke_token, verify_password
+from app.security import create_access_token, decode_access_token, dummy_verify_password, hash_password, revoke_token, verify_password
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -37,6 +39,21 @@ _VIDEO_EXTENSIONS = {".mp4"}
 async def lifespan(app: FastAPI):
     settings.upload_dir.mkdir(parents=True, exist_ok=True)
     Base.metadata.create_all(bind=engine)
+    # Recover stranded in-flight detection jobs from an ungraceful restart
+    try:
+        with SessionLocal() as db:
+            stranded = db.scalars(
+                select(Detection).where(Detection.status.in_(["queued", "processing"]))
+            ).all()
+            for d in stranded:
+                d.status = "failed"
+                d.error_message = "Analysis interrupted by server restart."
+                d.completed_at = datetime.now(timezone.utc)
+            if stranded:
+                db.commit()
+                logger.info("Marked %d stranded detection jobs as failed on startup", len(stranded))
+    except Exception:
+        logger.exception("Failed to recover stranded detection jobs on startup")
     yield
 
 
@@ -58,6 +75,55 @@ app.add_middleware(
 )
 
 
+@app.middleware("http")
+async def early_auth_and_size_guard(request: Request, call_next):
+    # 1. Early Content-Length check for upload routes to reject oversized payloads immediately
+    if request.method == "POST" and any(request.url.path.endswith(p) for p in ("/detections/image", "/detections/video", "/detect/ai-generated")):
+        cl = request.headers.get("content-length")
+        if cl and cl.isdigit():
+            max_allowed = settings.max_video_mb * 1024 * 1024 if "video" in request.url.path else settings.max_image_mb * 1024 * 1024
+            if int(cl) > max_allowed:
+                return Response(
+                    content=f'{{"detail":"Upload exceeds the {max_allowed // (1024 * 1024)} MB limit"}}',
+                    status_code=413,
+                    media_type="application/json",
+                )
+
+    # 2. Early authentication check for protected detection routes to reject unauthenticated
+    # requests immediately before Starlette streams or spools multipart body bytes to disk.
+    if request.method == "POST" and ("/detections/image" in request.url.path or "/detections/video" in request.url.path):
+        token = None
+        auth = request.headers.get("Authorization")
+        if auth and auth.startswith("Bearer "):
+            token = auth.split(" ", 1)[1].strip()
+        if not token:
+            token = request.cookies.get(settings.cookie_name)
+
+        user_id = decode_access_token(token) if token else None
+        if not user_id:
+            return Response(
+                content='{"detail":"Not authenticated"}',
+                status_code=401,
+                media_type="application/json",
+            )
+
+    return await call_next(request)
+
+
+_RATE_LIMITS: dict[str, list[float]] = {}
+_RATE_LIMIT_LOCK = threading.Lock()
+
+
+def _check_rate_limit(client_ip: str, max_requests: int = 25, window_seconds: int = 60) -> None:
+    now = time.time()
+    with _RATE_LIMIT_LOCK:
+        history = [t for t in _RATE_LIMITS.get(client_ip, []) if now - t < window_seconds]
+        if len(history) >= max_requests:
+            raise HTTPException(status_code=429, detail="Too many authentication requests. Please wait a moment.")
+        history.append(now)
+        _RATE_LIMITS[client_ip] = history
+
+
 def _safe_original_filename(filename: str | None) -> str:
     candidate = (filename or "upload").replace("\\", "/").split("/")[-1].strip()
     candidate = re.sub(r"[^A-Za-z0-9._ -]", "_", candidate)
@@ -72,7 +138,7 @@ def _validate_magic_bytes(header: bytes, ext: str) -> bool:
     if ext == ".webp":
         return len(header) >= 12 and header.startswith(b"RIFF") and header[8:12] == b"WEBP"
     if ext == ".mp4":
-        return len(header) >= 8 and (b"ftyp" in header[4:32] or b"moov" in header[4:32])
+        return len(header) >= 8 and (header[4:8] in (b"ftyp", b"moov"))
     return False
 
 
@@ -107,7 +173,7 @@ async def _save_upload(upload: UploadFile, allowed_extensions: set[str], max_byt
                 if first_chunk:
                     if not _validate_magic_bytes(chunk, ext):
                         raise HTTPException(
-                            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                             detail="File content does not match the expected media signature",
                         )
                     first_chunk = False
@@ -221,10 +287,14 @@ def health(db: Session = Depends(get_db)):
         db_status = "ok"
     except Exception:
         db_status = "error"
+    model_st = classifier.status()
+    # Mask internal exception details from public health check
+    if "load_error" in model_st and model_st["load_error"]:
+        model_st["load_error"] = "Error initializing model. Check server logs."
     return {
         "status": "ok" if db_status == "ok" else "degraded",
         "database": db_status,
-        "model": classifier.status(),
+        "model": model_st,
         "inference_ready": classifier.model_loaded,
         "note": "The model is loaded lazily on the first inference request.",
     }
@@ -232,7 +302,9 @@ def health(db: Session = Depends(get_db)):
 
 @app.post(f"{settings.api_prefix}/auth/register", response_model=AuthResponse, status_code=201, tags=["authentication"])
 @app.post("/auth/register", response_model=AuthResponse, status_code=201, tags=["authentication"], include_in_schema=False)
-def register(payload: RegisterRequest, response: Response, db: Session = Depends(get_db)):
+def register(payload: RegisterRequest, request: Request, response: Response, db: Session = Depends(get_db)):
+    client_ip = request.client.host if request.client else "unknown"
+    _check_rate_limit(client_ip)
     email = str(payload.email).strip().lower()
     if len(payload.password) < 10:
         raise HTTPException(status_code=422, detail="Password must be at least 10 characters")
@@ -250,7 +322,9 @@ def register(payload: RegisterRequest, response: Response, db: Session = Depends
 
 @app.post(f"{settings.api_prefix}/auth/login", response_model=AuthResponse, tags=["authentication"])
 @app.post("/auth/login", response_model=AuthResponse, tags=["authentication"], include_in_schema=False)
-def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)):
+def login(payload: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
+    client_ip = request.client.host if request.client else "unknown"
+    _check_rate_limit(client_ip)
     email = str(payload.email).strip().lower()
     user = db.scalar(select(User).where(User.email == email))
     # Same response for unknown account and wrong password reduces account enumeration.

@@ -30,6 +30,8 @@ def open_validated_image(path: str | Path) -> Image.Image:
         with Image.open(path) as image:
             image.verify()
         with Image.open(path) as image:
+            if image.width < 16 or image.height < 16:
+                raise InvalidMediaError("Image is too small to contain a detectable face (minimum 16x16 pixels)")
             if image.width * image.height > settings.max_image_pixels:
                 raise InvalidMediaError("Image pixel count exceeds the configured limit")
             # Correct EXIF rotation so portrait smartphone images aren't analyzed sideways
@@ -53,6 +55,8 @@ def inspect_video(path: str | Path) -> VideoInfo:
         duration = frame_count / fps if fps > 0 and frame_count > 0 else 0.0
         if width <= 0 or height <= 0 or frame_count <= 0 or fps <= 0 or duration <= 0:
             raise InvalidMediaError("Video metadata is incomplete or unsupported")
+        if width > 3840 or height > 2160:
+            raise InvalidMediaError("Video resolution exceeds 4K limit (3840x2160)")
         if duration > settings.max_video_seconds:
             raise InvalidMediaError(
                 f"Video duration ({duration:.1f}s) exceeds the {settings.max_video_seconds}s limit"
@@ -81,6 +85,9 @@ def sample_video_frames(path: str | Path, requested_samples: int):
                 continue
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             image = Image.fromarray(rgb)
+            # Downscale frame if larger than 1280px to cap peak memory during inference
+            if image.width > 1280 or image.height > 1280:
+                image.thumbnail((1280, 1280))
             yield frame_index, frame_index / info.fps, image
     finally:
         capture.release()

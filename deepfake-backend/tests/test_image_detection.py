@@ -62,6 +62,43 @@ def test_image_upload_rejects_unsupported_extension(client):
     assert response.status_code == 415
 
 
+def test_unauthenticated_upload_rejected_early(client):
+    # Early middleware check rejects unauthenticated uploads immediately
+    response = client.post("/api/v1/detections/image", files={"file": ("sample.jpg", b"123", "image/jpeg")})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
+
+
+def test_tiny_image_rejected(client):
+    reg = client.post("/api/v1/auth/register", json={"email": "tiny@example.com", "password": "StrongPassword123!"})
+    token = reg.json()["access_token"]
+    buffer = BytesIO()
+    # 10x10 image is too small to contain a detectable human face
+    Image.new("RGB", (10, 10), (120, 120, 120)).save(buffer, format="JPEG")
+    buffer.seek(0)
+    response = client.post(
+        "/api/v1/detections/image",
+        headers={"Authorization": f"Bearer {token}"},
+        files={"file": ("tiny.jpg", buffer.getvalue(), "image/jpeg")},
+    )
+    assert response.status_code == 422
+    assert "too small" in response.json()["detail"]
+
+
+def test_mp4_magic_bytes_must_be_at_offset_4(client):
+    reg = client.post("/api/v1/auth/register", json={"email": "mp4test@example.com", "password": "StrongPassword123!"})
+    token = reg.json()["access_token"]
+    # Malicious payload with "ftyp" placed at byte 20 instead of offset 4
+    junk_payload = b"\x00" * 20 + b"ftyp" + b"\x00" * 40
+    response = client.post(
+        "/api/v1/detections/video",
+        headers={"Authorization": f"Bearer {token}"},
+        files={"file": ("fake.mp4", junk_payload, "video/mp4")},
+    )
+    assert response.status_code == 422
+    assert "media signature" in response.json()["detail"]
+
+
 def test_image_upload_rejects_spoofed_magic_bytes(client):
     reg = client.post("/api/v1/auth/register", json={"email": "spoof@example.com", "password": "StrongPassword123!"})
     assert reg.status_code == 201

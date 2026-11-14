@@ -75,3 +75,29 @@ def test_revoked_token_cannot_be_reused(client):
 
     # Token cannot be reused after logout
     assert client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 401
+
+
+def test_tokens_forged_with_public_secret_are_rejected(client):
+    import jwt
+    from datetime import datetime, timedelta, timezone
+
+    # Register legitimate user
+    reg = client.post("/api/v1/auth/register", json={"email": "victim@example.com", "password": "StrongPassword123!"})
+    user_id = reg.json()["user"]["id"]
+
+    # Attacker tries to forge a token using the published repo default secret
+    public_secret = "insecure-development-secret-change-before-deploying"
+    forged_token = jwt.encode(
+        {
+            "sub": user_id,
+            "iat": datetime.now(timezone.utc),
+            "exp": datetime.now(timezone.utc) + timedelta(minutes=30),
+            "type": "access",
+        },
+        public_secret,
+        algorithm="HS256",
+    )
+
+    # Server must reject forged token with 401
+    res = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {forged_token}"})
+    assert res.status_code == 401

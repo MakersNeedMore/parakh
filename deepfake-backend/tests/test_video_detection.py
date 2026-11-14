@@ -76,19 +76,49 @@ def test_video_analysis_weights_peak_manipulation_score(monkeypatch, tmp_path):
     writer.release()
 
     call_count = 0
-    # Simulate 9 real frames (0.05) and 1 spliced deepfake frame (0.95)
+    # Simulate 8 real frames (0.05) and 2 spliced deepfake frames (0.95)
     def mock_predict(image):
         nonlocal call_count
         call_count += 1
-        fake_p = 0.95 if call_count == 5 else 0.05
+        fake_p = 0.95 if call_count in (4, 5) else 0.05
         return Prediction(fake_probability=fake_p, real_probability=1.0 - fake_p, model_id="mock")
 
     from app.ml.model_service import classifier
     monkeypatch.setattr(classifier, "predict_image", mock_predict)
     res = analyze_video_path(video_path, requested_samples=10)
 
-    # Standard arithmetic mean would be ~0.14 (falsely authentic).
-    # With peak-sensitive weighting, verdict is likely_manipulated and score >= 0.6.
+    # Standard arithmetic mean would be ~0.23 (falsely authentic).
+    # With clustered peak weighting, verdict is likely_manipulated and score >= 0.6.
     assert res["verdict"] == "likely_manipulated"
     assert res["fake_probability"] >= 0.6
-    assert res["aggregation_method"] == "peak_weighted_frame_probabilities"
+    assert res["aggregation_method"] == "clustered_peak_weighted_frame_probabilities"
+
+
+def test_video_analysis_single_isolated_noise_is_damped(monkeypatch, tmp_path):
+    from app.ml.model_service import Prediction, classifier
+    from app.ml.pipeline import analyze_video_path
+
+    video_path = tmp_path / "single_anomaly.mp4"
+    writer = cv2.VideoWriter(str(video_path), cv2.VideoWriter_fourcc(*"mp4v"), 5.0, (64, 64))
+    if not writer.isOpened():
+        import pytest
+        pytest.skip("OpenCV MP4 encoder unavailable in this environment")
+    for i in range(10):
+        frame = np.full((64, 64, 3), i * 10, dtype=np.uint8)
+        writer.write(frame)
+    writer.release()
+
+    call_count = 0
+    # Simulate 9 real frames (0.05) and only 1 noisy frame (0.90)
+    def mock_predict_single(image):
+        nonlocal call_count
+        call_count += 1
+        fake_p = 0.90 if call_count == 5 else 0.05
+        return Prediction(fake_probability=fake_p, real_probability=1.0 - fake_p, model_id="mock")
+
+    monkeypatch.setattr(classifier, "predict_image", mock_predict_single)
+    res = analyze_video_path(video_path, requested_samples=10)
+
+    # Single isolated spike out of 10 is damped so transient noise doesn't alone flag a video as fake
+    assert res["aggregation_method"] == "single_anomaly_damped_probabilities"
+    assert res["verdict"] == "likely_authentic"

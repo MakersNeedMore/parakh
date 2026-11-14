@@ -1,4 +1,5 @@
 import os
+import secrets
 from functools import lru_cache
 from pathlib import Path
 
@@ -8,9 +9,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 _BACKEND_DIR = Path(__file__).resolve().parent.parent
 _REPO_ROOT = _BACKEND_DIR.parent
 _ENV_SEARCH_PATHS = (
+    ".env",
+    str(_REPO_ROOT / "backend" / ".env"),
     str(_REPO_ROOT / ".env"),
     str(_BACKEND_DIR / ".env"),
-    ".env",
 )
 
 
@@ -41,7 +43,7 @@ class Settings(BaseSettings):
     default_video_samples: int = 12
     fake_threshold: float = 0.5
     deepfake_model_id: str = "KoreaPeter/ms-eff-gcvit-deepfake-b0-ff-plus-plus"
-    model_revision: str | None = None
+    model_revision: str | None = "fc6fc9594ae35a6880ffa3f8e128239968703a25"
     hf_token: str | None = None
     model_device: str = "auto"
 
@@ -85,15 +87,26 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_prod_settings(self):
         env = self.environment.lower()
-        if env in {"production", "prod", "live", "staging"}:
-            if len(self.secret_key) < 32 or self.secret_key.startswith("insecure-") or "replace-this" in self.secret_key:
-                raise ValueError("Set a unique SECRET_KEY of at least 32 characters in production environments")
+        is_prod = env in {"production", "prod", "live", "staging"}
+        is_insecure_key = (
+            len(self.secret_key) < 32
+            or self.secret_key.startswith("insecure-")
+            or "replace-this" in self.secret_key
+        )
+        if is_prod and is_insecure_key:
+            raise ValueError("Set a unique SECRET_KEY of at least 32 characters in production environments")
+        if is_prod:
             if not self.cookie_secure:
                 raise ValueError("COOKIE_SECURE=true is required in production environments")
             if self.cookie_samesite == "none" and not self.cookie_secure:
                 raise ValueError("SameSite=None requires Secure cookies")
             if "*" in self.cors_origin_list:
                 raise ValueError("Wildcard CORS origins are not allowed in production environments")
+        elif is_insecure_key:
+            # For non-production or default deploys without an explicit SECRET_KEY,
+            # generate an ephemeral random 256-bit key on startup so tokens cannot
+            # be forged using the public repository placeholder string.
+            self.secret_key = secrets.token_hex(32)
         return self
 
 
