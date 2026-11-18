@@ -4,7 +4,8 @@
  * The access token is held in module memory only; a page reload requires sign-in again.
  */
 
-const API_BASE = (process.env.NEXT_PUBLIC_PARAKH_API_URL || "http://127.0.0.1:8000/api/v1").replace(/\/$/, "");
+const PROD_API_DEFAULT = "https://shivangsaxena10-parakh-backend.hf.space/api/v1";
+const API_BASE = (process.env.NEXT_PUBLIC_PARAKH_API_URL || (process.env.NEXT_PUBLIC_PARAKH_BACKEND ? `${process.env.NEXT_PUBLIC_PARAKH_BACKEND.replace(/\/$/, '')}/api/v1` : PROD_API_DEFAULT)).replace(/\/$/, "");
 let accessToken: string | null = null;
 
 export type ParakhUser = {
