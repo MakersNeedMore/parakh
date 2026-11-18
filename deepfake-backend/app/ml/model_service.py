@@ -135,15 +135,17 @@ class DeepGuardClassifier:
                 else:
                     raise ValueError("MODEL_DEVICE must be auto, cpu, -1, or a CUDA device index")
 
+                model_target = getattr(settings, "resolved_model_path", settings.deepfake_model_id)
                 pipeline_kwargs: dict[str, Any] = {
                     "task": "image-classification",
-                    "model": settings.deepfake_model_id,
+                    "model": model_target,
                     "trust_remote_code": True,
                     "device": device,
                 }
-                if settings.hf_token:
+                import os
+                if settings.hf_token and not os.path.isdir(str(model_target)):
                     pipeline_kwargs["token"] = settings.hf_token
-                if settings.model_revision:
+                if settings.model_revision and not os.path.isdir(str(model_target)):
                     pipeline_kwargs["revision"] = settings.model_revision
 
                 self._pipeline = pipeline(**pipeline_kwargs)

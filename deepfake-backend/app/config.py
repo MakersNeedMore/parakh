@@ -59,6 +59,19 @@ class Settings(BaseSettings):
     model_device: str = "auto"
 
     @property
+    def resolved_model_path(self) -> str:
+        # Prefer bundled local model_weights directory to be resilient against HF network / gated 403 blocks
+        local_candidates = [
+            _BACKEND_DIR / "model_weights",
+            _REPO_ROOT / "model_weights",
+            Path("model_weights"),
+        ]
+        for candidate in local_candidates:
+            if candidate.is_dir() and (candidate / "config.json").is_file():
+                return str(candidate.resolve())
+        return self.deepfake_model_id
+
+    @property
     def cors_origin_list(self) -> list[str]:
         # Trailing slashes never match a browser Origin header, so strip them.
         return [origin.strip().rstrip("/") for origin in self.cors_origins.split(",") if origin.strip()]

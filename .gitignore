@@ -57,6 +57,10 @@ evaluation-output/
 # Parakh inference backend weights & models
 backend/models/*.onnx
 backend/models/*.json
+deepfake-backend/model_weights/*.safetensors
+deepfake-backend/model_weights/*.pt
+model_weights/*.safetensors
+model_weights/*.pt
 
 # Archives
 *.zip
