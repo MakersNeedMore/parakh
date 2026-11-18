@@ -194,3 +194,39 @@ def test_root_path_detection_routes(monkeypatch, client):
     del_res = client.delete(f"/detections/{det_id}", headers=headers)
     assert del_res.status_code == 204
     assert client.get(f"/detections/{det_id}", headers=headers).status_code == 404
+
+
+def _png_bytes():
+    buffer = BytesIO()
+    Image.new("RGB", (100, 100), (30, 140, 60)).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+def test_public_detector_reports_no_face_detected(monkeypatch, client):
+    from app.ml.model_service import NO_FACE_MESSAGE, NoFacePredictionError
+
+    def no_face(path):
+        raise NoFacePredictionError("No face detected in the image.")
+
+    monkeypatch.setattr("app.main.analyze_image_path", no_face)
+    res = client.post("/v1/detect/ai-generated", files={"image": ("landscape.png", _png_bytes(), "image/png")})
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["status"] == "no_face_detected"
+    assert data["score"] is None
+    assert data["message"] == NO_FACE_MESSAGE
+
+
+def test_public_detector_reports_model_unavailable(monkeypatch, client):
+    from app.ml.model_service import ModelUnavailableError
+
+    def broken(path):
+        raise ModelUnavailableError("weights missing")
+
+    monkeypatch.setattr("app.main.analyze_image_path", broken)
+    res = client.post("/v1/detect/ai-generated", files={"image": ("face.png", _png_bytes(), "image/png")})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "unavailable"
+    assert data["score"] is None
+    assert "weights missing" not in res.text

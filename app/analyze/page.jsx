@@ -179,6 +179,33 @@ export default function AnalyzePage() {
       status: 'Synthetic (High Risk)'
     };
   };
+  // Styling for an engine that produced no score. A missing score must never be
+  // drawn as 0% / green "Authentic" — it means "not measured".
+  const NEUTRAL_THEME = { color: '#71717a', bg: 'rgba(113, 113, 122, 0.08)', border: 'rgba(113, 113, 122, 0.25)' };
+  const WARNING_THEME = { color: '#d97706', bg: 'rgba(245, 158, 11, 0.10)', border: 'rgba(245, 158, 11, 0.35)' };
+  const getEngineView = (eng) => {
+    const hasScore = typeof eng.score === 'number' && Number.isFinite(eng.score);
+    if (hasScore) {
+      const theme = eng.status === 'informational' ? getMetricStyle(50) : getMetricStyle(eng.score);
+      return { hasScore, theme, gaugeText: `${eng.score}%`, pill: eng.status };
+    }
+    if (eng.status === 'no_face_detected') {
+      return { hasScore, theme: NEUTRAL_THEME, gaugeText: 'N/A', pill: 'No Face Found' };
+    }
+    if (eng.status === 'unavailable') {
+      const pill = {
+        'backend-unreachable': 'Server Offline',
+        'model-unavailable': 'Model Unavailable',
+        'invalid-media': 'Unreadable Image',
+      }[eng.reason] || 'Not Scored';
+      return { hasScore, theme: WARNING_THEME, gaugeText: 'N/A', pill };
+    }
+    return { hasScore, theme: NEUTRAL_THEME, gaugeText: '—', pill: eng.status };
+  };
+  const aiGenEngine = report?.engines?.find((e) => e.id === 'ai-generated-detector');
+  const backendUnreachable = aiGenEngine?.status === 'unavailable' && aiGenEngine?.reason === 'backend-unreachable';
+  const modelNotScored = aiGenEngine?.status === 'unavailable' && !backendUnreachable;
+  const noFaceDetected = aiGenEngine?.status === 'no_face_detected';
   return (
     <div className="app-container">
       <Navbar />
@@ -331,6 +358,24 @@ export default function AnalyzePage() {
             )}
             {showScorecard && report && (
               <div className="scorecard-container" id="forensic-scorecard">
+                {backendUnreachable && (
+                  <div className="analyze-alert analyze-alert-error" role="alert">
+                    <strong>AI Neural Backend unreachable. Please check backend service.</strong>
+                    <span>No deepfake score was produced — the result below is not an authenticity verdict. {aiGenEngine.message}</span>
+                  </div>
+                )}
+                {modelNotScored && (
+                  <div className="analyze-alert analyze-alert-warn" role="alert">
+                    <strong>The AI neural model could not score this image.</strong>
+                    <span>{aiGenEngine.message || aiGenEngine.details?.[0]}</span>
+                  </div>
+                )}
+                {noFaceDetected && (
+                  <div className="analyze-alert analyze-alert-info" role="status">
+                    <strong>{aiGenEngine.message}</strong>
+                    <span>Upload an image with a clearly visible human face to get a deepfake score. Landscapes, objects, anime or text-only images are outside this model&apos;s scope.</span>
+                  </div>
+                )}
                 <div className="scorecard-header">
                   <div className="scorecard-header-left">
                     <span className="scorecard-badge">Forensic Verification Report · Steps 1–2 Provenance + AI-Generated Detection</span>
@@ -344,25 +389,28 @@ export default function AnalyzePage() {
                 </div>
                 <div className="scorecard-grid">
                   {report.engines.map((eng) => {
-                    const val = eng.score == null ? 0 : eng.score;
-                    const theme = getMetricStyle(eng.score == null || eng.status === 'informational' ? 50 : val);
+                    const view = getEngineView(eng);
+                    const theme = view.theme;
                     const circumference = 238.76;
-                    const strokeOffset = circumference - (circumference * val) / 100;
+                    // No score -> empty ring (no arc), never a 0% reading.
+                    const strokeOffset = view.hasScore
+                      ? circumference - (circumference * Math.max(0, Math.min(100, eng.score))) / 100
+                      : circumference;
                     return (
                       <div key={eng.id} className="scorecard-card">
                         <div className="gauge-wrap">
                           <svg className="gauge-svg" width="96" height="96" viewBox="0 0 96 96">
                             <circle className="gauge-track" cx="48" cy="48" r="38" fill="none" strokeWidth="7" />
                             <circle className="gauge-progress-bar" cx="48" cy="48" r="38" fill="none" strokeWidth="7" stroke={theme.color} strokeDasharray={circumference} strokeDashoffset={strokeOffset} strokeLinecap="round" transform="rotate(-90 48 48)" />
-                            <text x="48" y="53" textAnchor="middle" className="gauge-val-text">
-                              {eng.score == null ? '—' : `${eng.score}%`}
+                            <text x="48" y="53" textAnchor="middle" className="gauge-val-text" style={view.hasScore ? undefined : { fill: theme.color, fontSize: 16 }}>
+                              {view.gaugeText}
                             </text>
                           </svg>
                         </div>
                         <div className="metric-details">
                           <span className="metric-name">{eng.name}</span>
                           <span className="metric-status-pill" style={{ color: theme.color, backgroundColor: theme.bg, borderColor: theme.border }}>
-                            {eng.status}
+                            {view.pill}
                           </span>
                           {eng.details.slice(0, 4).map((d, i) => (
                             <span key={i} className="metric-desc">{d}</span>

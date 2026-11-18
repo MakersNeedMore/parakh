@@ -1,4 +1,5 @@
 import os
+import re
 import secrets
 from functools import lru_cache
 from pathlib import Path
@@ -31,7 +32,17 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     database_url: str = "sqlite:///./deepfake.db"
     upload_dir: Path = Path("./uploads")
-    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,http://localhost:8000,http://127.0.0.1:8000,http://localhost:5173,https://anuragverma0907.github.io,https://parakh.xyz,https://pixpect.xyz"
+    cors_origins: str = (
+        "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,"
+        "http://localhost:8000,http://127.0.0.1:8000,http://localhost:5173,"
+        "https://anuragverma0907.github.io,"
+        "https://parakh.xyz,https://www.parakh.xyz,"
+        "https://pixpect.xyz,https://www.pixpect.xyz"
+    )
+    # Optional regex for origins that cannot be listed one by one (e.g. Vercel
+    # preview deployments). Matched against the full Origin header. Set to an
+    # empty string via CORS_ORIGIN_REGEX= to disable.
+    cors_origin_regex: str | None = r"^https://([a-z0-9-]+\.)?(parakh|pixpect)\.xyz$"
     cookie_name: str = "deepfake_access"
     cookie_secure: bool = False
     cookie_samesite: str = "lax"
@@ -49,7 +60,20 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        # Trailing slashes never match a browser Origin header, so strip them.
+        return [origin.strip().rstrip("/") for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @field_validator("cors_origin_regex", mode="after")
+    @classmethod
+    def validate_origin_regex(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        value = value.strip()
+        try:
+            re.compile(value)
+        except re.error as exc:
+            raise ValueError(f"CORS_ORIGIN_REGEX is not a valid regular expression: {exc}") from exc
+        return value
 
     @field_validator("cookie_samesite")
     @classmethod
@@ -102,6 +126,8 @@ class Settings(BaseSettings):
                 raise ValueError("SameSite=None requires Secure cookies")
             if "*" in self.cors_origin_list:
                 raise ValueError("Wildcard CORS origins are not allowed in production environments")
+            if self.cors_origin_regex and re.fullmatch(self.cors_origin_regex, "https://evil.example"):
+                raise ValueError("CORS_ORIGIN_REGEX is too permissive for production (it matches arbitrary origins)")
         elif is_insecure_key:
             # For non-production or default deploys without an explicit SECRET_KEY,
             # generate an ephemeral random 256-bit key on startup so tokens cannot

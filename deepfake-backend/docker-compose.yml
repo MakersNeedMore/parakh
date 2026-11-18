@@ -11,7 +11,7 @@ services:
     volumes:
       - deepfake-data:/service/data
       - ./uploads:/service/uploads
-      - ./model-cache:/root/.cache/huggingface
+      - ./model-cache:/service/.cache/huggingface
     restart: unless-stopped
 
 volumes:

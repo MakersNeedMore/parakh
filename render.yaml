@@ -1,0 +1,41 @@
+# Render Blueprint for the Parakh DeepGuard backend.
+# Deploy: Render Dashboard -> New -> Blueprint -> pick this repo. Render reads this file
+# from the repository root and builds deepfake-backend/Dockerfile.
+#
+# MEMORY WARNING: PyTorch + the DeepGuard model need roughly 1.5-2.5 GB RAM at inference.
+# Render's free plan has 512 MB and will likely be OOM-killed on the first scan.
+# Use `plan: standard` (2 GB) or bigger for reliable inference, or host the backend
+# for free on Hugging Face Spaces instead (see deepfake-backend/DEPLOY.md).
+services:
+  - type: web
+    name: parakh-backend
+    runtime: docker
+    plan: free
+    region: singapore
+    rootDir: deepfake-backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /v1/health
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "true"
+      # Frontend (parakh.xyz) and backend (*.onrender.com) are different sites, so
+      # cross-site auth cookies need SameSite=None (Secure is enforced above).
+      - key: COOKIE_SAMESITE
+        value: none
+      - key: CORS_ORIGINS
+        value: https://parakh.xyz,https://www.parakh.xyz,https://pixpect.xyz,https://www.pixpect.xyz,https://anuragverma0907.github.io
+      - key: CORS_ORIGIN_REGEX
+        value: ^https://([a-z0-9-]+\.)?(parakh|pixpect)\.xyz$
+      - key: MODEL_DEVICE
+        value: cpu
+      - key: FAKE_THRESHOLD
+        value: "0.5"
+      # Optional: only needed if the model repo becomes gated/private.
+      - key: HF_TOKEN
+        sync: false

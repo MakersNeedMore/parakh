@@ -43,8 +43,16 @@ class ModelUnavailableError(RuntimeError):
     """Raised when the configured pretrained model cannot be loaded or run."""
 
 
+# User-facing explanation returned by the public detector when the face
+# detector finds nobody to score (landscapes, objects, anime, text, ...).
+NO_FACE_MESSAGE = "No human face detected. Parakh DeepGuard specializes in facial deepfakes."
+
+
 class NoFacePredictionError(ValueError):
     """Raised when the model pipeline cannot score an image/face."""
+
+    status = "no_face_detected"
+    user_message = NO_FACE_MESSAGE
 
 
 @dataclass(frozen=True)

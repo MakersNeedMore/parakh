@@ -22,7 +22,7 @@ from app.database import Base, SessionLocal, engine, get_db
 from app.dependencies import get_current_user
 from app.jobs import process_video_job
 from app.ml.media import InvalidMediaError, inspect_video, open_validated_image
-from app.ml.model_service import ModelUnavailableError, NoFacePredictionError, classifier
+from app.ml.model_service import NO_FACE_MESSAGE, ModelUnavailableError, NoFacePredictionError, classifier
 from app.ml.pipeline import analyze_image_path
 from app.models import Detection, User
 from app.schemas import AuthResponse, DetectionOut, LoginRequest, RegisterRequest, UserOut
@@ -69,6 +69,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
+    allow_origin_regex=settings.cors_origin_regex,
     allow_credentials=True,
     allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-CSRF-Token"],
@@ -230,52 +231,98 @@ def v1_health():
     return {"ok": True, "modelReady": classifier.model_loaded, "model": settings.deepfake_model_id}
 
 
+_AI_GEN_ENGINE = {"engine": "ai-generated-detector", "name": "AI-Generated Image Detector"}
+_AI_GEN_LIMITATIONS = [
+    "Statistical detector trained on FaceForensics++ face swaps/reenactment: not definitive proof of manipulation.",
+    "It scores human faces only. Fully AI-generated scenes or edits outside the face are not covered and may score low.",
+    "Heavy post-processing, recompression, or extreme angles can influence scores.",
+]
+
+
+def _ai_gen_unscored(status_val: str, message: str, limitations: list[str], runtime_ms: int = 0) -> dict:
+    """Structured response for a request the model could not score (score is always null)."""
+    return {
+        **_AI_GEN_ENGINE,
+        "version": f"DeepGuard ({settings.deepfake_model_id})",
+        "score": None,
+        "status": status_val,
+        "message": message,
+        "runtimeMs": runtime_ms,
+        "details": [message],
+        "limitations": limitations,
+    }
+
+
 @app.post("/v1/detect/ai-generated", tags=["detection"])
 @app.post(f"{settings.api_prefix}/detect/ai-generated", tags=["detection"], include_in_schema=False)
 async def detect_ai_generated(
     image: UploadFile | None = File(None),
     file: UploadFile | None = File(None),
 ):
+    """Public pixel detector used by the web app.
+
+    Always answers 200 with an engine object. `score` is an integer 0-100 only when
+    the model actually scored a face; otherwise it is null and `status` says why:
+    `no_face_detected`, `invalid_media`, or `unavailable`.
+    """
     upload = image or file
     if upload is None:
         raise HTTPException(status_code=400, detail="Missing image or file upload in request body")
     path, original = await _save_upload(upload, _IMAGE_EXTENSIONS, settings.max_image_mb * 1024 * 1024)
+    t0 = datetime.now(timezone.utc)
+
+    def elapsed_ms() -> int:
+        return round((datetime.now(timezone.utc) - t0).total_seconds() * 1000)
+
     try:
-        t0 = datetime.now(timezone.utc)
         result = await run_in_threadpool(analyze_image_path, path)
         fake_prob = float(result["fake_probability"])
         score = round(fake_prob * 100)
         status_val = "flagged" if fake_prob >= settings.fake_threshold else ("uncertain" if fake_prob >= 0.4 else "likely-real")
-        runtime_ms = round((datetime.now(timezone.utc) - t0).total_seconds() * 1000)
         return {
-            "engine": "ai-generated-detector",
-            "name": "AI-Generated Image Detector",
+            **_AI_GEN_ENGINE,
             "version": f"DeepGuard-FaceForensics++ ({result['model_id']})",
             "score": score,
             "status": status_val,
-            "runtimeMs": runtime_ms,
+            "message": None,
+            "runtimeMs": elapsed_ms(),
             "details": [
                 f"Deepfake / manipulation probability: {fake_prob * 100:.1f}%",
                 f"Verdict: {result['verdict']}",
                 f"Model: {result['model_id']}",
             ],
-            "limitations": [
-                "Statistical detector based on FaceForensics++: not definitive proof of manipulation.",
-                "Heavy post-processing, recompression, or extreme angles can influence scores.",
-            ],
+            "limitations": _AI_GEN_LIMITATIONS,
         }
-    except Exception as exc:
+    except NoFacePredictionError:
+        return _ai_gen_unscored(
+            "no_face_detected",
+            NO_FACE_MESSAGE,
+            ["Upload a photo or video frame where a real human face is clearly visible to get a deepfake score."],
+            elapsed_ms(),
+        )
+    except InvalidMediaError as exc:
+        return _ai_gen_unscored(
+            "invalid_media",
+            f"The image could not be read: {exc}",
+            ["Use a valid JPEG, PNG or WEBP file."],
+            elapsed_ms(),
+        )
+    except ModelUnavailableError:
+        logger.exception("AI generation detection: model unavailable")
+        return _ai_gen_unscored(
+            "unavailable",
+            "The neural model is still loading or failed to load on the server. Please retry in a minute.",
+            ["Provenance checks still ran. Re-run analysis once the model is ready (see GET /health)."],
+            elapsed_ms(),
+        )
+    except Exception:
         logger.exception("AI generation detection error")
-        return {
-            "engine": "ai-generated-detector",
-            "name": "AI-Generated Image Detector",
-            "version": "DeepGuard",
-            "score": None,
-            "status": "unavailable",
-            "runtimeMs": 0,
-            "details": [f"Detection unavailable: {str(exc)}"],
-            "limitations": ["Ensure clear face image is provided."],
-        }
+        return _ai_gen_unscored(
+            "unavailable",
+            "The neural detector failed on the server. Check the backend logs.",
+            ["Provenance checks still ran."],
+            elapsed_ms(),
+        )
     finally:
         path.unlink(missing_ok=True)
 
@@ -507,5 +554,4 @@ def delete_detection(detection_id: str, db: Session = Depends(get_db), user: Use
         raise HTTPException(status_code=404, detail="Detection not found")
     db.delete(detection)
     db.commit()
-    return None
     return None

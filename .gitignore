@@ -17,6 +17,7 @@ Thumbs.db
 *.pem
 .vscode/
 .idea/
+.claude/
 # Environments & Virtual Environments
 .env
 .env*.local
